@@ -7,7 +7,7 @@ on:
       - 'backend/**'
 
 env:
-  DEPLOY_SERVER_IP: ${{ secrets.DEPLOY_SERVER_IP || '95.179.248.242' }}
+  DEPLOY_SERVER_IP: ${{ secrets.DEPLOY_SERVER_IP}}
 
 jobs:
   deploy:
