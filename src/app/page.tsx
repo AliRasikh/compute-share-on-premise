@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Header } from "@/components/Header";
+import { BaseLayout } from "@/components/BaseLayout";
 import { ResourceUsageChart } from "@/components/ResourceUsageChart";
 
 const PERIOD_OPTIONS = [7, 30, 90] as const;
@@ -181,35 +181,7 @@ export default function Home() {
   const nomadConnected = computeHealth?.nomad?.connected === true;
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
-      <div className="grid min-h-screen grid-cols-1 xl:grid-cols-[240px_1fr]">
-        <aside className="hidden border-r border-slate-200 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900 p-5 xl:block">
-          <div className="rounded-xl border border-blue-300/20 bg-blue-500/10 p-3">
-            <p className="text-xs uppercase tracking-[0.2em] text-blue-200">Compute Exchange</p>
-            <p className="mt-1 text-lg font-semibold text-white">Company Console</p>
-          </div>
-          <nav className="mt-6 space-y-2 text-sm">
-            {["Overview", "Add Job", "Billing", "Settings"].map(
-              (item) => (
-                <button
-                  key={item}
-                  className={`w-full rounded-lg px-3 py-2 text-left transition ${
-                    item === "Add Job"
-                      ? "bg-blue-500/20 text-blue-100"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  {item}
-                </button>
-              ),
-            )}
-          </nav>
-        </aside>
-
-        <div>
-          <Header />
-
-          <main className="space-y-8 p-4 sm:p-6 lg:p-8">
+    <BaseLayout className="min-h-screen text-slate-900" mainClassName="space-y-8 p-4 sm:p-6 lg:p-8">
           <section className="space-y-2 pb-8">
             <h2 className="section-title">
               <span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-600" />
@@ -319,9 +291,6 @@ export default function Home() {
               Data source: {cpuData.computeSource === "live" ? "cluster snapshot" : "mock"}
             </p>
           ) : null}
-          </main>
-        </div>
-      </div>
-    </div>
+    </BaseLayout>
   );
 }

@@ -1,3 +1,17 @@
+"use client";
+
+import {
+  WORKSPACE_SIDEBAR_DOM_ID,
+  WorkspaceSidebarMenuButton,
+} from "@/components/WorkspaceSidebar";
+
+type HeaderNavToggleProps = {
+  expanded: boolean;
+  onOpen: () => void;
+  /** Must match the mobile drawer `id` on `WorkspaceSidebar` */
+  controlsId?: string;
+};
+
 type HeaderProps = {
   /**
    * Upper label. Omit for default "Company Workspace".
@@ -10,6 +24,8 @@ type HeaderProps = {
   profileButtonLabel?: string;
   showProfileButton?: boolean;
   onManageProfileClick?: () => void;
+  /** When set, shows the workspace menu button (hidden from `xl` up). */
+  navToggle?: HeaderNavToggleProps;
   className?: string;
 };
 
@@ -23,22 +39,33 @@ export function Header({
   profileButtonLabel = "Manage Profile",
   showProfileButton = true,
   onManageProfileClick,
+  navToggle,
   className,
 }: HeaderProps) {
   const eyebrowText = eyebrow === undefined ? DEFAULT_EYEBROW : eyebrow;
+  const controlsId = navToggle?.controlsId ?? WORKSPACE_SIDEBAR_DOM_ID;
 
   return (
     <header
       className={`sticky top-0 z-20 shrink-0 border-b border-slate-200/80 bg-white/85 px-4 py-4 backdrop-blur md:px-6 ${className ?? ""}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          {eyebrowText !== null ? (
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
-              {eyebrowText}
-            </p>
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          {navToggle ? (
+            <WorkspaceSidebarMenuButton
+              mobileOpen={navToggle.expanded}
+              onOpen={navToggle.onOpen}
+              controlsId={controlsId}
+            />
           ) : null}
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
+          <div className="min-w-0">
+            {eyebrowText !== null ? (
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
+                {eyebrowText}
+              </p>
+            ) : null}
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
+          </div>
         </div>
         {showProfileButton ? (
           <div className="flex items-center gap-2">
