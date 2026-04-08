@@ -31,7 +31,7 @@ export function MarketingHeader() {
   if (prefersReducedMotion) {
     return (
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur md:px-8">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+        <div className="flex w-full items-center justify-between gap-4">
           <BrandHomeLink />
           <nav className="flex items-center gap-4 text-sm font-medium text-slate-600">
             <Link href="/" className="transition hover:text-slate-900">
@@ -45,7 +45,7 @@ export function MarketingHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur md:px-8">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+      <div className="flex w-full items-center justify-between gap-4">
         <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} transition={linkSpring}>
           <BrandHomeLink />
         </motion.div>

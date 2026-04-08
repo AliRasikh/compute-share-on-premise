@@ -9,9 +9,9 @@ import { Footer } from "@/components/Footer";
 
 export function HomePageClient() {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen w-full bg-slate-50 text-slate-900">
       <MarketingHeader />
-      <main className="mx-auto max-w-6xl space-y-16 px-4 py-10 md:space-y-24 md:px-8 md:py-14">
+      <main className="w-full space-y-16 px-4 py-10 md:space-y-24 md:px-8 md:py-14">
         <AnimatedSection>
           <HomeHero />
         </AnimatedSection>

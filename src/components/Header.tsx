@@ -1,6 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { CORIMB_LOGO_SRC } from "@/lib/brand";
+
+const navTextClass =
+  "text-sm font-medium text-slate-600 transition hover:text-slate-900";
 
 type HeaderProps = {
   /**
@@ -11,7 +15,14 @@ type HeaderProps = {
   /** Main heading (h1). Default: "Corimb". */
   title?: string;
   initials?: string;
-  profileButtonLabel?: string;
+  /** Optional profile image URL; falls back to initials on a colored circle. */
+  avatarSrc?: string;
+  /** Primary app route for the Dashboard control. */
+  dashboardHref?: string;
+  /** Used when `onNewTaskClick` is not set. */
+  newTaskHref?: string;
+  /** When set, "New Task" renders as a button instead of a link. */
+  onNewTaskClick?: () => void;
   showProfileButton?: boolean;
   onManageProfileClick?: () => void;
   className?: string;
@@ -24,7 +35,10 @@ export function Header({
   eyebrow,
   title = DEFAULT_TITLE,
   initials = "CO",
-  profileButtonLabel = "Manage Profile",
+  avatarSrc,
+  dashboardHref = "/",
+  newTaskHref = "/",
+  onNewTaskClick,
   showProfileButton = true,
   onManageProfileClick,
   className,
@@ -54,22 +68,45 @@ export function Header({
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
           </div>
         </div>
-        {showProfileButton ? (
-          <div className="flex items-center gap-2">
+
+        <div className="flex flex-wrap items-center justify-end gap-4 sm:gap-6">
+          <nav className="flex items-center gap-4 sm:gap-6" aria-label="Workspace">
+            <Link href={dashboardHref} className={navTextClass}>
+              Dashboard
+            </Link>
+            {onNewTaskClick ? (
+              <button
+                type="button"
+                onClick={onNewTaskClick}
+                className={`${navTextClass} cursor-pointer border-0 bg-transparent p-0 font-sans`}
+              >
+                New Task
+              </button>
+            ) : (
+              <Link href={newTaskHref} className={navTextClass}>
+                New Task
+              </Link>
+            )}
+          </nav>
+
+          {showProfileButton ? (
             <button
               type="button"
               onClick={onManageProfileClick}
-              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
+              className="flex h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-200/80 bg-blue-600 text-left shadow-sm transition hover:border-slate-300 hover:opacity-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
               aria-label="Manage profile"
               title="Manage profile"
             >
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-[11px] font-bold text-white">
-                {initials}
-              </span>
-              {profileButtonLabel}
+              {avatarSrc ? (
+                <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-[11px] font-bold text-white">
+                  {initials}
+                </span>
+              )}
             </button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
     </header>
   );
