@@ -15,7 +15,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import jobs, nodes, metrics
+from routers import jobs, nodes, metrics, trading, admin
 from nomad_client import NomadClient
 
 # ── Logging ──────────────────────────────────────────────────────────────────
@@ -89,6 +89,8 @@ app.add_middleware(
 app.include_router(jobs.router, prefix="/api/v1", tags=["Jobs"])
 app.include_router(nodes.router, prefix="/api/v1", tags=["Nodes"])
 app.include_router(metrics.router, prefix="/api/v1", tags=["Metrics"])
+app.include_router(trading.router, prefix="/api/v1", tags=["Trading"])
+app.include_router(admin.router, prefix="/api/v1", tags=["Admin"])
 
 
 # ── Root endpoint ────────────────────────────────────────────────────────────
@@ -104,6 +106,8 @@ async def root():
             "jobs": "/api/v1/jobs",
             "nodes": "/api/v1/nodes",
             "metrics": "/api/v1/metrics",
+            "trading_metrics": "/api/v1/trading-metrics",
+            "admin_servers": "/api/v1/admin/servers",
         },
     }
 

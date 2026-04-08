@@ -154,6 +154,22 @@ curl http://localhost:8080/api/v1/jobs/my-ai-task | jq
 | `GET` | `/api/v1/metrics` | Aggregated cluster metrics (JSON) |
 | `GET` | `/api/v1/metrics/prometheus` | Prometheus format export |
 
+### Trading Metrics
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/trading-metrics?period=30d&resource=gpu` | GPU/CPU buy/sell/price charts |
+
+Query params: `period` = `7d` | `30d` | `90d`, `resource` = `gpu` | `cpu`
+
+Returns: `{ labels, buy, sell, marketPrice, computeSource, resources }`
+
+### Admin Dashboard
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/admin/servers` | Server nodes with KPIs, demand series, activity feed |
+
+Returns: `{ servers[], kpi{}, activities[], timeLabels[] }`
+
 ### Health
 | Method | Endpoint | Description |
 |--------|----------|-------------|
