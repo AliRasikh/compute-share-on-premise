@@ -1,0 +1,90 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+
+env:
+  DEPLOY_SERVER_IP: ${{ secrets.DEPLOY_SERVER_IP }}
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Next.js frontend via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.DEPLOY_SERVER_IP }}
+          username: ${{ secrets.SSH_USER || 'root' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          timeout: 300s
+          script: |
+            set -e
+
+            APP_DIR="/opt/sovereign-frontend"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+            BRANCH="main"
+            NODE_VERSION="20"
+
+            echo "═══════════════════════════════════════════════════════"
+            echo "  Sovereign Compute Engine — Frontend Deploy"
+            echo "═══════════════════════════════════════════════════════"
+
+            # ── 1. Ensure Node.js is available ────────────────────────
+            if ! command -v node &> /dev/null; then
+              echo "→ Installing Node.js $NODE_VERSION..."
+              curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
+              apt-get install -y nodejs
+            fi
+            echo "  Node: $(node -v)  npm: $(npm -v)"
+
+            # ── 2. Ensure pm2 is available ────────────────────────────
+            if ! command -v pm2 &> /dev/null; then
+              echo "→ Installing pm2..."
+              npm install -g pm2
+            fi
+
+            # ── 3. Clone or pull latest code ──────────────────────────
+            if [ -d "$APP_DIR/.git" ]; then
+              echo "→ Pulling latest code..."
+              cd "$APP_DIR"
+              git fetch origin "$BRANCH"
+              git reset --hard "origin/$BRANCH"
+            else
+              echo "→ Cloning repository..."
+              rm -rf "$APP_DIR"
+              git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$APP_DIR"
+              cd "$APP_DIR"
+            fi
+
+            # ── 4. Create .env.local for production ───────────────────
+            cat > .env.local << 'ENVEOF'
+            COMPUTE_API_BASE_URL=http://127.0.0.1:8080
+            ENVEOF
+            sed -i 's/^[[:space:]]*//' .env.local
+
+            echo "  .env.local:"
+            cat .env.local
+
+            # ── 5. Install dependencies & build ───────────────────────
+            echo "→ Installing dependencies..."
+            npm ci --prefer-offline
+
+            echo "→ Building Next.js production bundle..."
+            npm run build
+
+            # ── 6. Start / restart with pm2 ──────────────────────────
+            echo "→ Starting Next.js on port 3000..."
+            pm2 delete sovereign-frontend 2>/dev/null || true
+            PORT=3000 pm2 start npm --name "sovereign-frontend" -- start
+            pm2 save
+
+            # Ensure pm2 resurrects on reboot
+            pm2 startup systemd -u root --hp /root 2>/dev/null || true
+
+            echo ""
+            echo "═══════════════════════════════════════════════════════"
+            echo "  ✅ Frontend deployed!"
+            echo "  → http://${{ env.DEPLOY_SERVER_IP }}:3000"
+            echo "═══════════════════════════════════════════════════════"
