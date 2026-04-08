@@ -1,0 +1,19 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deploy on server
+        run: |
+          curl -X POST http://95.179.248.242:9000/deploy \
+            --max-time 10 \
+            --retry 2 \
+            -o /dev/null -w "HTTP %{http_code}" \
+            && echo " - Deploy triggered!"
