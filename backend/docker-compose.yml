@@ -185,7 +185,7 @@ services:
     environment:
       - NOMAD_ADDR=http://nomad-server:4646
       - NOMAD_TOKEN=
-      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:8080,null
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:8080,http://95.179.248.242:8080,http://95.179.248.242:3000,*
     ports:
       - "8080:8080"
     networks:
