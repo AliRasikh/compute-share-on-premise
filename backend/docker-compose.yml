@@ -185,7 +185,7 @@ services:
     environment:
       - NOMAD_ADDR=http://nomad-server:4646
       - NOMAD_TOKEN=
-      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:8080,null
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:8080,http://95.179.248.242:8080,http://95.179.248.242:3000,*
     ports:
       - "8080:8080"
     networks:
@@ -194,18 +194,7 @@ services:
       nomad-server:
         condition: service_healthy
 
-  # ── Dashboard (simple static server) ──────────────────────────────────────
-  dashboard:
-    image: python:3.11-slim
-    container_name: sovereign-dashboard
-    working_dir: /dashboard
-    command: python -m http.server 3000
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./dashboard:/dashboard:ro
-    networks:
-      - sovereign-net
+
 
 volumes:
   nomad-server-data:
