@@ -6,13 +6,17 @@ on:
     paths:
       - 'backend/**'
 
+env:
+  DEPLOY_SERVER_IP: ${{ secrets.DEPLOY_SERVER_IP || '95.179.248.242' }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger deploy on server
         run: |
-          curl -X POST http://95.179.248.242:9000/deploy \
+          echo "Deploying to $DEPLOY_SERVER_IP..."
+          curl -X POST http://${{ env.DEPLOY_SERVER_IP }}:9000/deploy \
             --max-time 10 \
             --retry 2 \
             -o /dev/null -w "HTTP %{http_code}" \
