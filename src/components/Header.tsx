@@ -1,17 +1,6 @@
 "use client";
 
-import {
-  WORKSPACE_SIDEBAR_DOM_ID,
-  WorkspaceSidebarMenuButton,
-} from "@/components/WorkspaceSidebar";
 import { CORIMB_LOGO_SRC } from "@/lib/brand";
-
-type HeaderNavToggleProps = {
-  expanded: boolean;
-  onOpen: () => void;
-  /** Must match the mobile drawer `id` on `WorkspaceSidebar` */
-  controlsId?: string;
-};
 
 type HeaderProps = {
   /**
@@ -25,8 +14,6 @@ type HeaderProps = {
   profileButtonLabel?: string;
   showProfileButton?: boolean;
   onManageProfileClick?: () => void;
-  /** When set, shows the workspace menu button (hidden from `xl` up). */
-  navToggle?: HeaderNavToggleProps;
   className?: string;
 };
 
@@ -40,11 +27,9 @@ export function Header({
   profileButtonLabel = "Manage Profile",
   showProfileButton = true,
   onManageProfileClick,
-  navToggle,
   className,
 }: HeaderProps) {
   const eyebrowText = eyebrow === undefined ? DEFAULT_EYEBROW : eyebrow;
-  const controlsId = navToggle?.controlsId ?? WORKSPACE_SIDEBAR_DOM_ID;
 
   return (
     <header
@@ -52,13 +37,6 @@ export function Header({
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          {navToggle ? (
-            <WorkspaceSidebarMenuButton
-              mobileOpen={navToggle.expanded}
-              onOpen={navToggle.onOpen}
-              controlsId={controlsId}
-            />
-          ) : null}
           <img
             src={CORIMB_LOGO_SRC}
             alt=""
