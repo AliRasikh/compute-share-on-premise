@@ -1,20 +1,24 @@
 "use client";
 
 import { useEffect } from "react";
+import {
+  type SideBarListItem,
+  SideBarButton,
+} from "@/components/SideBarButton";
+
+export type { SideBarListItem } from "@/components/SideBarButton";
 import { SidebarToggleIcon } from "@/components/SidebarToggleIcon";
 
 export const WORKSPACE_SIDEBAR_DOM_ID = "workspace-sidebar";
 
-export type WorkspaceSidebarNavItem = {
-  id: string;
-  label: string;
-};
+/** @deprecated Use `SideBarListItem` from `@/components/SideBarButton` */
+export type WorkspaceSidebarNavItem = SideBarListItem;
 
-export const DEFAULT_WORKSPACE_SIDEBAR_ITEMS: WorkspaceSidebarNavItem[] = [
-  { id: "overview", label: "Overview" },
-  { id: "add-job", label: "Add Job" },
-  { id: "billing", label: "Billing" },
-  { id: "settings", label: "Settings" },
+export const DEFAULT_WORKSPACE_SIDEBAR_ITEMS: SideBarListItem[] = [
+  { id: "overview", buttonText: "Overview", buttonAction: () => {} },
+  { id: "add-job", buttonText: "Add Job", buttonAction: () => {} },
+  { id: "billing", buttonText: "Billing", buttonAction: () => {} },
+  { id: "settings", buttonText: "Settings", buttonAction: () => {} },
 ];
 
 const SIDEBAR_SHELL =
@@ -23,9 +27,9 @@ const SIDEBAR_SHELL =
 type WorkspaceSidebarNavProps = {
   brandEyebrow: string;
   brandTitle: string;
-  items: WorkspaceSidebarNavItem[];
+  items: SideBarListItem[];
   activeItemId?: string;
-  onItemSelect?: (item: WorkspaceSidebarNavItem) => void;
+  onItemSelect?: (item: SideBarListItem) => void;
   onNavigate?: () => void;
 };
 
@@ -43,23 +47,18 @@ function WorkspaceSidebarNav({
         <p className="text-xs uppercase tracking-[0.2em] text-blue-200">{brandEyebrow}</p>
         <p className="mt-1 text-lg font-semibold text-white">{brandTitle}</p>
       </div>
-      <nav className="mt-6 shrink-0 space-y-2 text-sm" aria-label="Workspace sections">
+      <nav className="mt-6 flex shrink-0 flex-col space-y-2" aria-label="Workspace sections">
         {items.map((item) => (
-          <button
+          <SideBarButton
             key={item.id}
-            type="button"
-            className={`w-full rounded-lg px-3 py-2 text-left transition ${
-              item.id === activeItemId
-                ? "bg-blue-500/20 text-blue-100"
-                : "text-slate-300 hover:bg-white/5 hover:text-white"
-            }`}
-            onClick={() => {
+            buttonText={item.buttonText}
+            isActive={item.id === activeItemId}
+            buttonAction={() => {
+              item.buttonAction();
               onItemSelect?.(item);
               onNavigate?.();
             }}
-          >
-            {item.label}
-          </button>
+          />
         ))}
       </nav>
     </>
@@ -78,13 +77,13 @@ export function WorkspaceSidebarMenuButton({
   return (
     <button
       type="button"
-      className="mt-0.5 shrink-0 rounded-lg p-2 text-slate-600 transition hover:bg-slate-100/90 xl:hidden"
+      className="inline-flex shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-blue-700 transition hover:border-blue-300 hover:bg-blue-100 xl:hidden"
       onClick={onOpen}
       aria-expanded={mobileOpen}
       aria-controls={controlsId}
       aria-label="Open navigation"
     >
-      <SidebarToggleIcon className="h-5 w-5" />
+      <SidebarToggleIcon className="h-6 w-6" />
     </button>
   );
 }
@@ -96,9 +95,9 @@ type WorkspaceSidebarProps = {
   onMobileOpenChange: (open: boolean) => void;
   brandEyebrow?: string;
   brandTitle?: string;
-  items?: WorkspaceSidebarNavItem[];
+  items?: SideBarListItem[];
   activeItemId?: string;
-  onItemSelect?: (item: WorkspaceSidebarNavItem) => void;
+  onItemSelect?: (item: SideBarListItem) => void;
 };
 
 export function WorkspaceSidebar({

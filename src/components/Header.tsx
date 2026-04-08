@@ -50,7 +50,7 @@ export function Header({
       className={`sticky top-0 z-20 shrink-0 border-b border-slate-200/80 bg-white/85 px-4 py-4 backdrop-blur md:px-6 ${className ?? ""}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           {navToggle ? (
             <WorkspaceSidebarMenuButton
               mobileOpen={navToggle.expanded}

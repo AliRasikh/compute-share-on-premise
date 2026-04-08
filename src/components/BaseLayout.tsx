@@ -3,10 +3,7 @@
 import { useState } from "react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import {
-  type WorkspaceSidebarNavItem,
-  WorkspaceSidebar,
-} from "@/components/WorkspaceSidebar";
+import { type SideBarListItem, WorkspaceSidebar } from "@/components/WorkspaceSidebar";
 
 type BaseLayoutProps = {
   children: React.ReactNode;
@@ -25,9 +22,9 @@ type BaseLayoutProps = {
   /** Workspace sidebar branding and nav (only when `showWorkspaceSidebar`) */
   sidebarBrandEyebrow?: string;
   sidebarBrandTitle?: string;
-  sidebarItems?: WorkspaceSidebarNavItem[];
+  sidebarItems?: SideBarListItem[];
   sidebarActiveItemId?: string;
-  onSidebarItemSelect?: (item: WorkspaceSidebarNavItem) => void;
+  onSidebarItemSelect?: (item: SideBarListItem) => void;
   sidebarId?: string;
 };
 
