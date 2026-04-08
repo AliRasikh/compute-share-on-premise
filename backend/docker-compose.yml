@@ -194,18 +194,7 @@ services:
       nomad-server:
         condition: service_healthy
 
-  # ── Dashboard (simple static server) ──────────────────────────────────────
-  dashboard:
-    image: python:3.11-slim
-    container_name: sovereign-dashboard
-    working_dir: /dashboard
-    command: python -m http.server 3000
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./dashboard:/dashboard:ro
-    networks:
-      - sovereign-net
+
 
 volumes:
   nomad-server-data:
