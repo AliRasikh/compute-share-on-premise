@@ -4,6 +4,7 @@ import {
   WORKSPACE_SIDEBAR_DOM_ID,
   WorkspaceSidebarMenuButton,
 } from "@/components/WorkspaceSidebar";
+import { CORIMB_LOGO_SRC } from "@/lib/brand";
 
 type HeaderNavToggleProps = {
   expanded: boolean;
@@ -18,7 +19,7 @@ type HeaderProps = {
    * Pass `null` to hide the eyebrow line.
    */
   eyebrow?: string | null;
-  /** Main heading (h1). Default: "Aster Labs". */
+  /** Main heading (h1). Default: "Corimb". */
   title?: string;
   initials?: string;
   profileButtonLabel?: string;
@@ -30,12 +31,12 @@ type HeaderProps = {
 };
 
 const DEFAULT_EYEBROW = "Company Workspace";
-const DEFAULT_TITLE = "Aster Labs";
+const DEFAULT_TITLE = "Corimb";
 
 export function Header({
   eyebrow,
   title = DEFAULT_TITLE,
-  initials = "AQ",
+  initials = "CO",
   profileButtonLabel = "Manage Profile",
   showProfileButton = true,
   onManageProfileClick,
@@ -58,6 +59,14 @@ export function Header({
               controlsId={controlsId}
             />
           ) : null}
+          <img
+            src={CORIMB_LOGO_SRC}
+            alt=""
+            width={36}
+            height={36}
+            className="h-9 w-9 shrink-0 object-contain"
+            aria-hidden
+          />
           <div className="min-w-0">
             {eyebrowText !== null ? (
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">

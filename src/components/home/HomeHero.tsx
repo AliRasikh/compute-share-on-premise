@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { HeroAnimatedBackground } from "@/components/home/HeroAnimatedBackground";
+import { CORIMB_LOGO_SRC, CORIMB_NAME } from "@/lib/brand";
 import { staggerContainer, staggerItem } from "@/components/home/motionPresets";
 
 const ctaRowClassName =
@@ -77,7 +78,17 @@ export function HomeHero() {
       <HeroAnimatedBackground />
       {prefersReducedMotion ? (
         <div className="relative z-10 mx-auto flex max-w-2xl flex-col gap-6 text-center md:text-left">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">Compute Exchange</p>
+          <div className="flex items-center justify-center gap-3 md:justify-start">
+            <img
+              src={CORIMB_LOGO_SRC}
+              alt=""
+              width={40}
+              height={40}
+              className="h-10 w-10 shrink-0 object-contain brightness-0 invert"
+              aria-hidden
+            />
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">{CORIMB_NAME}</p>
+          </div>
           <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
             Trade compute. Run workloads. Stay in control.
           </h1>
@@ -95,12 +106,20 @@ export function HomeHero() {
           viewport={{ once: true, amount: 0.28, margin: "0px 0px -10% 0px" }}
           variants={staggerContainer}
         >
-          <motion.p
-            className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300"
+          <motion.div
+            className="flex items-center justify-center gap-3 md:justify-start"
             variants={staggerItem}
           >
-            Compute Exchange
-          </motion.p>
+            <img
+              src={CORIMB_LOGO_SRC}
+              alt=""
+              width={40}
+              height={40}
+              className="h-10 w-10 shrink-0 object-contain brightness-0 invert"
+              aria-hidden
+            />
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">{CORIMB_NAME}</p>
+          </motion.div>
           <motion.h1
             className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl"
             variants={staggerItem}
