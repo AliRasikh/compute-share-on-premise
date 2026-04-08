@@ -142,9 +142,6 @@ export default function Home() {
             labels={gpuData?.labels ?? []}
             buySeries={gpuData?.buy ?? []}
             sellSeries={gpuData?.sell ?? []}
-            marketPriceSeries={gpuData?.marketPrice ?? []}
-            currencySymbol="€"
-            unitLabel={gpuData?.unit ?? "u"}
             isLoading={gpuLoading}
             error={gpuError}
           />
@@ -160,9 +157,6 @@ export default function Home() {
             labels={cpuData?.labels ?? []}
             buySeries={cpuData?.buy ?? []}
             sellSeries={cpuData?.sell ?? []}
-            marketPriceSeries={cpuData?.marketPrice ?? []}
-            currencySymbol="€"
-            unitLabel={cpuData?.unit ?? "u"}
             isLoading={cpuLoading}
             error={cpuError}
           />

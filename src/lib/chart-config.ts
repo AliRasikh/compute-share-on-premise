@@ -1,12 +1,6 @@
 import type { ChartOptions } from "chart.js";
 
-type BuildLineChartOptionsInput = {
-  unitLabel: string;
-};
-
-export function buildLineChartOptions({
-  unitLabel,
-}: BuildLineChartOptionsInput): ChartOptions<"line"> {
+export function buildLineChartOptions(): ChartOptions<"line"> {
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -32,7 +26,7 @@ export function buildLineChartOptions({
         callbacks: {
           label: (context) => {
             const value = context.parsed.y ?? 0;
-            return ` ${value.toFixed(0)} ${unitLabel}`;
+            return ` ${value.toFixed(1)}%`;
           },
         },
       },
@@ -51,12 +45,14 @@ export function buildLineChartOptions({
         },
       },
       y: {
-        beginAtZero: true,
+        min: 0,
+        max: 100,
         grid: {
           color: "#e2e8f0",
         },
         ticks: {
           color: "#64748b",
+          callback: (value) => `${value}%`,
         },
         border: {
           color: "#e2e8f0",

@@ -82,3 +82,16 @@ API endpoint `src/app/api/trading-metrics/route.ts` now provides resource-specif
 
 - `GET /api/trading-metrics?period=30d&resource=gpu`
 - `GET /api/trading-metrics?period=30d&resource=cpu`
+
+### Percentage Axis Mapping
+
+Chart Y-axis and tooltip values are shown as percentages (`0%..100%`) and use
+`src/lib/usage-metrics.ts`.
+
+- Mapping used in UI:
+  - `buy` -> `Own Usage %`
+  - `sell` -> `Shared Usage %`
+- `Idle %` is computed with:
+  - `Idle % = 100 - Own Usage % - Shared Usage %`
+- For time series rendering, percentages are derived per point against the
+  period capacity baseline (`max(own + shared)` in the visible series).

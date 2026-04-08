@@ -16,6 +16,12 @@ export type UsageMetrics = {
   cpuSharedPercent: number;
 };
 
+export type UsageChartSeries = {
+  ownUsagePercentSeries: number[];
+  sharedUsagePercentSeries: number[];
+  idlePercentSeries: number[];
+};
+
 const roundToTwo = (value: number): number => Math.round(value * 100) / 100;
 
 const toPercent = (part: number, total: number): number => {
@@ -25,6 +31,10 @@ const toPercent = (part: number, total: number): number => {
 
 const clampPercent = (value: number): number =>
   roundToTwo(Math.min(100, Math.max(0, value)));
+
+export function calculateUsagePercent(value: number, totalCapacity: number): number {
+  return clampPercent(toPercent(value, totalCapacity));
+}
 
 export function calculateGpuSharedPercent(
   sharedGpu: number,
@@ -68,5 +78,40 @@ export function calculateUsageMetrics(
     idlePercent,
     gpuSharedPercent,
     cpuSharedPercent,
+  };
+}
+
+export function buildUsageChartSeries(
+  ownSeries: number[],
+  sharedSeries: number[],
+): UsageChartSeries {
+  const seriesLength = Math.min(ownSeries.length, sharedSeries.length);
+  const pairedSeries = Array.from({ length: seriesLength }, (_, index) => ({
+    own: ownSeries[index] ?? 0,
+    shared: sharedSeries[index] ?? 0,
+  }));
+
+  const totalCapacity = Math.max(
+    1,
+    ...pairedSeries.map((point) => point.own + point.shared),
+  );
+
+  const ownUsagePercentSeries = pairedSeries.map((point) =>
+    calculateUsagePercent(point.own, totalCapacity),
+  );
+  const sharedUsagePercentSeries = pairedSeries.map((point) =>
+    calculateUsagePercent(point.shared, totalCapacity),
+  );
+  const idlePercentSeries = pairedSeries.map((_, index) =>
+    calculateIdlePercent(
+      ownUsagePercentSeries[index] ?? 0,
+      sharedUsagePercentSeries[index] ?? 0,
+    ),
+  );
+
+  return {
+    ownUsagePercentSeries,
+    sharedUsagePercentSeries,
+    idlePercentSeries,
   };
 }

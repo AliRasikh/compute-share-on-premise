@@ -10,9 +10,10 @@ import {
   PointElement,
   Tooltip,
 } from "chart.js";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Line } from "react-chartjs-2";
 import { buildLineChartOptions } from "@/lib/chart-config";
+import { buildUsageChartSeries } from "@/lib/usage-metrics";
 
 ChartJS.register(
   CategoryScale,
@@ -26,6 +27,29 @@ ChartJS.register(
 
 type TradingMode = "buy" | "sell";
 
+type MetricHelpKey = "own" | "shared" | "idle";
+
+const METRIC_HELP: Record<
+  MetricHelpKey,
+  { title: string; body: string }
+> = {
+  own: {
+    title: "Own usage",
+    body:
+      "Share of the selected period capacity used by your workload. For each point, own usage is buy volume as a percentage of the period baseline (maximum of own + shared across the visible series).",
+  },
+  shared: {
+    title: "Shared usage",
+    body:
+      "Share of the selected period capacity used by shared workloads. For each point, shared usage is sell volume as a percentage of the same period baseline (maximum of own + shared across the visible series).",
+  },
+  idle: {
+    title: "Idle",
+    body:
+      "Capacity not accounted for by own and shared usage in the chart: Idle % = 100% − Own usage % − Shared usage % (clamped to 0–100%).",
+  },
+};
+
 type ResourceUsageChartProps = {
   title: string;
   subtitle: string;
@@ -37,9 +61,6 @@ type ResourceUsageChartProps = {
   labels: string[];
   buySeries: number[];
   sellSeries: number[];
-  marketPriceSeries: number[];
-  currencySymbol: string;
-  unitLabel: string;
   isLoading?: boolean;
   error?: string | null;
 };
@@ -55,23 +76,35 @@ export function ResourceUsageChart({
   labels,
   buySeries,
   sellSeries,
-  marketPriceSeries,
-  currencySymbol,
-  unitLabel,
   isLoading = false,
   error = null,
 }: ResourceUsageChartProps) {
-  const activeSeries = mode === "sell" ? sellSeries : buySeries;
-  const currentLoad = activeSeries.at(-1) ?? 0;
-  const marketPricePerUnit = marketPriceSeries.at(-1) ?? 0;
-  const currentEarnings = mode === "sell" ? currentLoad * marketPricePerUnit : 0;
+  const [helpMetric, setHelpMetric] = useState<MetricHelpKey | null>(null);
+
+  useEffect(() => {
+    if (helpMetric === null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setHelpMetric(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [helpMetric]);
+
+  const { ownUsagePercentSeries, sharedUsagePercentSeries, idlePercentSeries } =
+    useMemo(() => buildUsageChartSeries(buySeries, sellSeries), [buySeries, sellSeries]);
+
+  const activeSeries =
+    mode === "sell" ? sharedUsagePercentSeries : ownUsagePercentSeries;
+  const currentOwnUsage = ownUsagePercentSeries.at(-1) ?? 0;
+  const currentSharedUsage = sharedUsagePercentSeries.at(-1) ?? 0;
+  const currentIdle = idlePercentSeries.at(-1) ?? 0;
 
   const chartData = useMemo(
     () => ({
       labels,
       datasets: [
         {
-          label: mode === "sell" ? "Sell volume" : "Buy volume",
+          label: mode === "sell" ? "Shared usage" : "Own usage",
           data: activeSeries,
           fill: true,
           borderColor: "#2563eb",
@@ -87,10 +120,9 @@ export function ResourceUsageChart({
     [labels, mode, activeSeries],
   );
 
-  const chartOptions = useMemo(
-    () => buildLineChartOptions({ unitLabel }),
-    [unitLabel],
-  );
+  const chartOptions = useMemo(() => buildLineChartOptions(), []);
+
+  const helpContent = helpMetric ? METRIC_HELP[helpMetric] : null;
 
   return (
     <section className="card space-y-5 p-5 sm:p-6">
@@ -147,16 +179,90 @@ export function ResourceUsageChart({
       </div>
 
       <div className="grid grid-cols-1 gap-2 text-sm text-slate-600 sm:grid-cols-3">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-          Current: <span className="font-semibold text-slate-900">{currentLoad.toFixed(0)} {unitLabel}</span>
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <span>Own Usage:</span>
+          <span className="flex items-center gap-1.5">
+            <span className="font-semibold text-slate-900">
+              {currentOwnUsage.toFixed(1)}%
+            </span>
+            <button
+              type="button"
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-[10px] font-semibold leading-none text-slate-600 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700"
+              aria-label="What is Own usage?"
+              onClick={() => setHelpMetric("own")}
+            >
+              ?
+            </button>
+          </span>
         </div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-          Price: <span className="font-semibold text-slate-900">{currencySymbol}{marketPricePerUnit.toFixed(2)}</span>
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <span>Shared Usage:</span>
+          <span className="flex items-center gap-1.5">
+            <span className="font-semibold text-slate-900">
+              {currentSharedUsage.toFixed(1)}%
+            </span>
+            <button
+              type="button"
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-[10px] font-semibold leading-none text-slate-600 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700"
+              aria-label="What is Shared usage?"
+              onClick={() => setHelpMetric("shared")}
+            >
+              ?
+            </button>
+          </span>
         </div>
-        <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
-          Earnings: <span className="font-semibold text-blue-700">{currencySymbol}{currentEarnings.toFixed(2)}</span>
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+          <span>Idle:</span>
+          <span className="flex items-center gap-1.5">
+            <span className="font-semibold text-blue-700">
+              {currentIdle.toFixed(1)}%
+            </span>
+            <button
+              type="button"
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-blue-300 bg-white text-[10px] font-semibold leading-none text-blue-700 transition hover:border-blue-500 hover:bg-blue-100"
+              aria-label="What is Idle?"
+              onClick={() => setHelpMetric("idle")}
+            >
+              ?
+            </button>
+          </span>
         </div>
       </div>
+
+      {helpContent && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+          role="presentation"
+          onClick={() => setHelpMetric(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="metric-help-title"
+            className="max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-lg"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3
+              id="metric-help-title"
+              className="text-base font-semibold text-slate-900"
+            >
+              {helpContent.title}
+            </h3>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">
+              {helpContent.body}
+            </p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                onClick={() => setHelpMetric(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isLoading && <p className="text-xs text-slate-500">Loading chart data...</p>}
       {error && <p className="text-xs text-red-600">{error}</p>}
