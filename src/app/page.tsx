@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Header } from "@/components/Header";
 import { ResourceUsageChart } from "@/components/ResourceUsageChart";
 
 const PERIOD_OPTIONS = [7, 30, 90] as const;
@@ -206,31 +207,7 @@ export default function Home() {
         </aside>
 
         <div>
-          <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/85 px-4 py-4 backdrop-blur md:px-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
-                  Company Workspace
-                </p>
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                  Aster Labs
-                </h1>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
-                  aria-label="Manage profile"
-                  title="Manage profile"
-                >
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-[11px] font-bold text-white">
-                    AQ
-                  </span>
-                  Manage Profile
-                </button>
-              </div>
-            </div>
-          </header>
+          <Header />
 
           <main className="space-y-8 p-4 sm:p-6 lg:p-8">
           <section className="space-y-2 pb-8">
