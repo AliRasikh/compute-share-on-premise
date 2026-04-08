@@ -1,0 +1,20 @@
+[project]
+name = "sovereign-compute-api"
+version = "0.1.0"
+description = "Sovereign Compute Engine — API Gateway for federated compute orchestration"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "httpx>=0.27.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+]
+
+[project.scripts]
+serve = "uvicorn main:app --reload --host 0.0.0.0 --port 8080"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.backends._legacy:_Backend"
