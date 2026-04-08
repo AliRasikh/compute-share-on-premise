@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { AnimatedBlobField } from "@/components/home/AnimatedBlobField";
 import { posterStaggerContainer, staggerItem } from "@/components/home/motionPresets";
 
 type HomePosterSectionProps = {
@@ -14,62 +15,55 @@ export function HomePosterSection({ title, subtitle }: HomePosterSectionProps) {
   const inner = (
     <>
       {title ? (
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{title}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#718096]">{title}</p>
       ) : null}
-      <p className="mt-3 max-w-md text-lg font-semibold text-slate-800 sm:text-xl">
+      <p className="mt-3 max-w-md text-lg font-semibold text-[#1a202c] sm:text-xl">
         {subtitle ?? "Your message here"}
       </p>
     </>
   );
 
-  if (prefersReducedMotion) {
-    return (
-      <div className="relative min-h-[280px] overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 sm:min-h-[360px]">
-        <div
-          className="absolute inset-0 bg-gradient-to-tr from-slate-200 via-blue-100/60 to-slate-50"
-          aria-hidden
-        />
-        <div className="relative flex h-full min-h-[inherit] flex-col items-center justify-center px-6 py-16 text-center">
-          {inner}
-        </div>
-      </div>
-    );
-  }
+  const innerMotion = (
+    <>
+      {title ? (
+        <motion.p
+          className="text-xs font-semibold uppercase tracking-[0.2em] text-[#718096]"
+          variants={staggerItem}
+        >
+          {title}
+        </motion.p>
+      ) : null}
+      <motion.p
+        className="mt-3 max-w-md text-lg font-semibold text-[#1a202c] sm:text-xl"
+        variants={staggerItem}
+      >
+        {subtitle ?? "Your message here"}
+      </motion.p>
+    </>
+  );
 
   return (
     <motion.div
-      className="relative min-h-[280px] overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm sm:min-h-[360px]"
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.3 }}
-      variants={posterStaggerContainer}
-      whileHover={{
-        y: -6,
-        scale: 1.012,
-        boxShadow: "0 24px 48px -16px rgba(15, 23, 42, 0.18)",
-        borderColor: "rgba(148, 163, 184, 0.55)",
-      }}
+      className="relative min-h-[280px] overflow-hidden rounded-3xl border border-slate-200/90 shadow-sm sm:min-h-[360px]"
+      initial={prefersReducedMotion ? false : "hidden"}
+      whileInView={prefersReducedMotion ? undefined : "visible"}
+      viewport={prefersReducedMotion ? undefined : { once: true, amount: 0.3 }}
+      variants={prefersReducedMotion ? undefined : posterStaggerContainer}
+      whileHover={
+        prefersReducedMotion
+          ? undefined
+          : {
+              y: -6,
+              scale: 1.012,
+              boxShadow: "0 24px 48px -16px rgba(15, 23, 42, 0.12)",
+              borderColor: "rgba(148, 163, 184, 0.45)",
+            }
+      }
       transition={{ type: "spring", stiffness: 380, damping: 28 }}
     >
-      <div
-        className="absolute inset-0 bg-gradient-to-tr from-slate-200 via-blue-100/60 to-slate-50"
-        aria-hidden
-      />
-      <div className="relative flex h-full min-h-[inherit] flex-col items-center justify-center px-6 py-16 text-center">
-        {title ? (
-          <motion.p
-            className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"
-            variants={staggerItem}
-          >
-            {title}
-          </motion.p>
-        ) : null}
-        <motion.p
-          className="mt-3 max-w-md text-lg font-semibold text-slate-800 sm:text-xl"
-          variants={staggerItem}
-        >
-          {subtitle ?? "Your message here"}
-        </motion.p>
+      <AnimatedBlobField variant="lightPoster" />
+      <div className="relative z-10 flex h-full min-h-[inherit] flex-col items-center justify-center px-6 py-16 text-center">
+        {prefersReducedMotion ? inner : innerMotion}
       </div>
     </motion.div>
   );
