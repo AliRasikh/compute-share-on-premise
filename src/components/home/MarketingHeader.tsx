@@ -34,11 +34,8 @@ export function MarketingHeader() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <BrandHomeLink />
           <nav className="flex items-center gap-4 text-sm font-medium text-slate-600">
-            <span className="text-blue-600" aria-current="page">
-              Home
-            </span>
             <Link href="/" className="transition hover:text-slate-900">
-              Console
+              Log-in
             </Link>
           </nav>
         </div>
@@ -53,12 +50,9 @@ export function MarketingHeader() {
           <BrandHomeLink />
         </motion.div>
         <nav className="flex items-center gap-4 text-sm font-medium text-slate-600">
-          <span className="text-blue-600" aria-current="page">
-            Home
-          </span>
           <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }} transition={linkSpring}>
             <Link href="/" className="transition hover:text-slate-900">
-              Console
+              Log-in
             </Link>
           </motion.div>
         </nav>
