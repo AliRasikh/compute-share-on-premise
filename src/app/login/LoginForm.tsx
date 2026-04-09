@@ -65,10 +65,6 @@ export function LoginForm() {
       >
         Log in
       </button>
-
-      <p className="text-center text-xs text-slate-400 bg-slate-800/40 rounded-lg px-3 py-2.5 font-mono">
-        Try with: <span className="text-blue-300 font-semibold">demo</span> / <span className="text-blue-300 font-semibold">demo1234</span>
-      </p>
     </form>
   );
 }
