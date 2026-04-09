@@ -82,7 +82,9 @@ function formatSnapshotTime(iso: string | undefined): string {
 
 const INSTALL_COMMAND = `curl -fsSL https://corimb.garden/install | sudo bash -s -- \\
   --company "your-company" \\
-  --datacenter "eu-west"`;
+  --datacenter "eu-west" \\
+  --headscale-url "https://headscale.corimb.garden"
+  --headscale-key "your-headscale-key"`;
 
 // ── Component ───────────────────────────────────────────────────────────────
 
@@ -320,9 +322,8 @@ export default function MyNodesPage() {
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <div
-                            className={`w-2 h-2 rounded-full ${
-                              isReady ? "bg-green-500 animate-pulse" : "bg-red-400"
-                            }`}
+                            className={`w-2 h-2 rounded-full ${isReady ? "bg-green-500 animate-pulse" : "bg-red-400"
+                              }`}
                           />
                           <h3 className="font-bold text-lg text-slate-900 truncate max-w-[180px]">{node.name}</h3>
                         </div>
@@ -338,16 +339,15 @@ export default function MyNodesPage() {
                               {/* Tooltip */}
                               <div className="absolute bottom-full right-0 mb-2 w-max max-w-[200px] px-3 py-2 bg-slate-900 text-white text-[11px] leading-tight rounded-lg opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all whitespace-normal z-50 shadow-lg">
                                 This is a secure server
-                                <svg className="absolute top-full right-2 text-slate-900 h-2 w-4" x="0px" y="0px" viewBox="0 0 255 255"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                                <svg className="absolute top-full right-2 text-slate-900 h-2 w-4" x="0px" y="0px" viewBox="0 0 255 255"><polygon className="fill-current" points="0,0 127.5,127.5 255,0" /></svg>
                               </div>
                             </div>
                           )}
                           <span
-                            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                              isReady
+                            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${isReady
                                 ? "bg-green-50 text-green-700 border border-green-200"
                                 : "bg-red-50 text-red-600 border border-red-200"
-                            }`}
+                              }`}
                           >
                             {node.status}
                           </span>

@@ -210,8 +210,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./headscale/data:/opt/headscale-data
+      - ../src/app/dashboard/my-nodes:/opt/frontend
     command: >
-      sh -c " echo 'Waiting for Headscale to start...'; sleep 5; docker exec headscale headscale users create cluster-nodes 2>/dev/null || true; ID=$$(docker exec -e NO_COLOR=1 headscale headscale users list | grep "cluster-nodes" | awk '{print $$1}'); echo $$ID; KEY=$$(docker exec headscale headscale preauthkeys create -e 14d --ephemeral --user $$ID); echo $$KEY > /opt/headscale-data/current_auth_key.txt; echo '=========================================================='; echo ' HEADSCALE AUTO-SETUP COMPLETE'; echo ' Your Worker Node Auth Key is: ' $$KEY; echo '=========================================================='; "
+      sh -c " echo 'Waiting for Headscale to start...'; sleep 5; docker exec headscale headscale users create cluster-nodes 2>/dev/null || true; ID=$$(docker exec -e NO_COLOR=1 headscale headscale users list | grep "cluster-nodes" | awk '{print $$1}'); echo $$ID; KEY=$$(docker exec headscale headscale preauthkeys create -e 14d --ephemeral --user $$ID); echo $$KEY > /opt/headscale-data/current_auth_key.txt; sed -i \"s/--headscale-key \\\".*\\\"/--headscale-key \\\"$$KEY\\\"/\" /opt/frontend/page.tsx; echo '=========================================================='; echo ' HEADSCALE AUTO-SETUP COMPLETE'; echo ' Your Worker Node Auth Key is: ' $$KEY; echo '=========================================================='; "
 volumes:
   nomad-server-data:
   nomad-alpha-data:
