@@ -34,7 +34,7 @@ export function HomePosterSection({ title, subtitle }: HomePosterSectionProps) {
         </motion.p>
       ) : null}
       <motion.p
-        className="mt-3 max-w-md text-lg font-semibold text-[#1a202c] sm:text-xl"
+        className="mt-3 text-lg text-[#1a202c] sm:text-xl"
         variants={staggerItem}
       >
         {subtitle ?? "Your message here"}
