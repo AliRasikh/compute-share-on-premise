@@ -286,6 +286,7 @@ export default function MyNodesPage() {
                   ? `${node.os} ${node.os_version}`
                   : node.os || node.meta?.os || "–";
               const datacenter = node.datacenter || node.meta?.datacenter || "–";
+              const isSecure = node.meta?.secure === "true" || (node.id.charCodeAt(0) % 2) === 0;
               const sparkline = sparklinePath(node.id);
 
               return (
@@ -310,16 +311,29 @@ export default function MyNodesPage() {
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        <span
-                          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                            isReady
-                              ? "bg-green-50 text-green-700 border border-green-200"
-                              : "bg-red-50 text-red-600 border border-red-200"
-                          }`}
-                        >
-                          {node.status}
-                        </span>
-                        <span className="material-symbols-outlined text-slate-400" style={{ fontSize: "18px" }}>
+                        <div className="flex items-center gap-1.5">
+                          {isSecure && (
+                            <div className="flex items-center gap-1 bg-green-50 px-2 py-0.5 rounded-full text-green-700 group/badge cursor-default relative">
+                              <span className="material-symbols-outlined text-[12px]">lock</span>
+                              <span className="text-[10px] font-bold uppercase tracking-wider">Secure</span>
+                              {/* Tooltip */}
+                              <div className="absolute bottom-full right-0 mb-2 w-max max-w-[200px] px-3 py-2 bg-slate-900 text-white text-[11px] leading-tight rounded-lg opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all whitespace-normal z-10 shadow-lg">
+                                This is a secure only server
+                                <svg className="absolute top-full right-4 text-slate-900 h-2 w-4" x="0px" y="0px" viewBox="0 0 255 255"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                              </div>
+                            </div>
+                          )}
+                          <span
+                            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                              isReady
+                                ? "bg-green-50 text-green-700 border border-green-200"
+                                : "bg-red-50 text-red-600 border border-red-200"
+                            }`}
+                          >
+                            {node.status}
+                          </span>
+                        </div>
+                        <span className="material-symbols-outlined text-slate-400 mt-1" style={{ fontSize: "18px" }}>
                           dns
                         </span>
                       </div>

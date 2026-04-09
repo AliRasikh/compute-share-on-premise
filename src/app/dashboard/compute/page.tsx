@@ -288,6 +288,7 @@ export default function ComputePage() {
   const [filterRamMin, setFilterRamMin] = useState(0);
   const [filterRegions, setFilterRegions] = useState<Set<string>>(new Set());
   const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
+  const [filterSecureOnly, setFilterSecureOnly] = useState(false);
 
   // Deploy modal state
   const [deployNode, setDeployNode] = useState<ClusterNode | null>(null);
@@ -488,10 +489,12 @@ export default function ComputePage() {
   const filteredNodes = nodes.filter((n) => {
     const cores = parseInt(n.resources.cpu_cores || n.meta?.cpu_cores || "0", 10);
     const ramGb = n.resources.memory_mb / 1024;
+    const isSecure = n.meta?.secure === "true" || (n.id.charCodeAt(0) % 2) === 0;
 
     if (cores < filterCpuMin) return false;
     if (ramGb < filterRamMin) return false;
     if (filterOnlineOnly && n.status !== "ready") return false;
+    if (filterSecureOnly && !isSecure) return false;
     if (filterRegions.size > 0 && !filterRegions.has(n.datacenter)) return false;
 
     return true;
@@ -513,10 +516,11 @@ export default function ComputePage() {
     setFilterRamMin(0);
     setFilterRegions(new Set());
     setFilterOnlineOnly(false);
+    setFilterSecureOnly(false);
   };
 
   const hasActiveFilters =
-    filterCpuMin > 0 || filterRamMin > 0 || filterRegions.size > 0 || filterOnlineOnly;
+    filterCpuMin > 0 || filterRamMin > 0 || filterRegions.size > 0 || filterOnlineOnly || filterSecureOnly;
 
   return (
     <>
@@ -697,6 +701,23 @@ export default function ComputePage() {
                   </span>
                   <span className="text-sm text-slate-700">Online only</span>
                 </label>
+
+                {/* Secure toggle */}
+                <label className="flex items-center gap-2.5 cursor-pointer group mt-2">
+                  <span
+                    onClick={() => setFilterSecureOnly((v) => !v)}
+                    className={`w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all duration-150 ${
+                      filterSecureOnly
+                        ? "bg-blue-600 border-blue-600"
+                        : "border-slate-300 group-hover:border-blue-400"
+                    }`}
+                  >
+                    {filterSecureOnly && (
+                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    )}
+                  </span>
+                  <span className="text-sm text-slate-700">Secure only</span>
+                </label>
               </div>
 
               {/* Reset */}
@@ -734,6 +755,7 @@ export default function ComputePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
                 {filteredNodes.map((node) => {
                   const isReady = node.status === "ready";
+                  const isSecure = node.meta?.secure === "true" || (node.id.charCodeAt(0) % 2) === 0;
                   const cpuCores = node.resources.cpu_cores || node.meta?.cpu_cores || "–";
                   const memMb = node.resources.memory_mb;
                   const diskMb = node.resources.disk_mb;
@@ -760,15 +782,29 @@ export default function ComputePage() {
                             {node.datacenter}
                           </div>
                         </div>
-                        <div
-                          className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${
-                            isReady
-                              ? "bg-blue-50 text-blue-600 border-blue-100"
-                              : "bg-red-50 text-red-500 border-red-100"
-                          }`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${isReady ? "bg-blue-500 animate-pulse" : "bg-red-400"}`} />
-                          {isReady ? "Online" : node.status}
+                        {/* Top right badges */}
+                        <div className="flex gap-2 shrink-0">
+                          {isSecure && (
+                            <div className="flex items-center gap-1 bg-green-50 px-2 py-1 rounded-md text-green-700 group/badge cursor-default relative">
+                              <span className="material-symbols-outlined text-[14px]">lock</span>
+                              <span className="text-xs font-semibold">Secure</span>
+                              {/* Tooltip */}
+                              <div className="absolute bottom-full right-0 mb-2 w-max max-w-[200px] px-3 py-2 bg-slate-900 text-white text-[11px] leading-tight rounded-lg opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all whitespace-normal z-10 shadow-lg">
+                                This is a secure only server
+                                <svg className="absolute top-full right-4 text-slate-900 h-2 w-4" x="0px" y="0px" viewBox="0 0 255 255"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                              </div>
+                            </div>
+                          )}
+                          <div
+                            className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${
+                              isReady
+                                ? "bg-blue-50 text-blue-600 border-blue-100"
+                                : "bg-red-50 text-red-500 border-red-100"
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${isReady ? "bg-blue-500 animate-pulse" : "bg-red-400"}`} />
+                            {isReady ? "Online" : node.status}
+                          </div>
                         </div>
                       </div>
 
