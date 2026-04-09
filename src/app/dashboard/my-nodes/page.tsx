@@ -292,7 +292,7 @@ export default function MyNodesPage() {
               return (
                 <div
                   key={node.id}
-                  className="flex flex-col rounded-xl bg-white shadow-sm border border-slate-200 overflow-hidden hover:border-blue-500 transition-colors duration-200"
+                  className="flex flex-col rounded-xl bg-white shadow-sm border border-slate-200 hover:border-blue-500 transition-colors duration-200"
                 >
                   <div className="p-5 flex flex-col gap-4">
                     {/* Node name + status */}
@@ -316,7 +316,7 @@ export default function MyNodesPage() {
                             <div className="flex items-center justify-center w-6 h-6 bg-green-50 rounded-full text-green-700 group/badge cursor-default relative">
                               <span className="material-symbols-outlined text-[12px]">lock</span>
                               {/* Tooltip */}
-                              <div className="absolute bottom-full right-0 mb-2 w-max max-w-[200px] px-3 py-2 bg-slate-900 text-white text-[11px] leading-tight rounded-lg opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all whitespace-normal z-10 shadow-lg">
+                              <div className="absolute bottom-full right-0 mb-2 w-max max-w-[200px] px-3 py-2 bg-slate-900 text-white text-[11px] leading-tight rounded-lg opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all whitespace-normal z-50 shadow-lg">
                                 This is a secure server
                                 <svg className="absolute top-full right-2 text-slate-900 h-2 w-4" x="0px" y="0px" viewBox="0 0 255 255"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
                               </div>
@@ -372,7 +372,7 @@ export default function MyNodesPage() {
                   </div>
 
                   {/* Sparkline Area */}
-                  <div className="mt-auto border-t border-slate-50 bg-slate-50/50 p-4 relative">
+                  <div className="mt-auto border-t border-slate-50 bg-slate-50/50 p-4 relative rounded-b-xl">
                     <div className="flex justify-between items-center mb-2">
                       <p className="text-xs font-medium text-slate-500">
                       </p>
