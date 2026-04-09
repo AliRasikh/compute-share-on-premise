@@ -287,7 +287,7 @@ export default function ComputePage() {
   const [filterCpuMin, setFilterCpuMin] = useState(0);
   const [filterRamMin, setFilterRamMin] = useState(0);
   const [filterRegions, setFilterRegions] = useState<Set<string>>(new Set());
-  const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
+  const [filterOnlineOnly, setFilterOnlineOnly] = useState(true);
   const [filterSecureOnly, setFilterSecureOnly] = useState(false);
 
   // Deploy modal state
