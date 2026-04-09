@@ -39,6 +39,25 @@ echo "=========================================="
 mkdir -p /sys/fs/cgroup/nomad.slice 2>/dev/null || true
 
 if [ "$ROLE" = "server" ]; then
+
+    # ── Auto-detect advertise IP if not explicitly set ───────────────────────
+    # Priority: 1) env var  2) Tailscale VPN IP  3) public IP  4) skip
+    if [ -z "$ADVERTISE_IP" ]; then
+        # Try tailscale0 interface (host networking exposes it inside the container)
+        ADVERTISE_IP=$(ip -4 addr show tailscale0 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' || true)
+        if [ -n "$ADVERTISE_IP" ]; then
+            echo "[*] Auto-detected Tailscale IP for advertise: ${ADVERTISE_IP}"
+        else
+            # Fall back to public IP
+            ADVERTISE_IP=$(curl -s --max-time 3 https://ifconfig.me 2>/dev/null || curl -s --max-time 3 https://api.ipify.org 2>/dev/null || true)
+            if [ -n "$ADVERTISE_IP" ]; then
+                echo "[*] Auto-detected public IP for advertise: ${ADVERTISE_IP}"
+            else
+                echo "[!] WARNING: Could not detect advertise IP. Nomad will auto-detect (may pick Docker bridge IP)."
+            fi
+        fi
+    fi
+
     # ── Server Configuration ─────────────────────────────────────────────────
     cat > /opt/nomad/config/nomad.hcl << HCLEOF
 datacenter = "${DATACENTER}"
