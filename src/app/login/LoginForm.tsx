@@ -49,8 +49,8 @@ export function LoginForm() {
       />
       <input
         id="login-password"
-        name="password"
-        type="password"
+        name="pin"
+        type="text"
         autoComplete="off"
         required
         aria-label="Password"
@@ -58,6 +58,7 @@ export function LoginForm() {
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        style={{ WebkitTextSecurity: "disc" } as React.CSSProperties}
       />
       <button
         type="submit"
