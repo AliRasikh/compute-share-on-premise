@@ -18,8 +18,9 @@ class NomadClient:
     """Async HTTP client for the Nomad REST API."""
 
     def __init__(self, addr: str = "http://127.0.0.1:4646", token: str = ""):
-        self.addr = addr.rstrip("/")
-        self.token = token
+        # Trim only env-sourced strings; avoids httpx errors from CRLF in .env
+        self.addr = addr.strip().rstrip("/")
+        self.token = token.strip()
         self._client = httpx.AsyncClient(
             base_url=f"{self.addr}/v1",
             headers=self._build_headers(),
@@ -75,7 +76,7 @@ class NomadClient:
     async def submit_job(self, job_spec: dict) -> dict:
         """
         Submit (register) a job to Nomad.
-        
+
         The job_spec should be the full Nomad job JSON (with the "Job" key).
         See: https://developer.hashicorp.com/nomad/api-docs/jobs#create-job
         """

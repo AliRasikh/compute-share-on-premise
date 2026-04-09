@@ -144,6 +144,55 @@ async def list_nodes(request: Request):
         raise HTTPException(status_code=502, detail=f"Nomad API error: {str(e)}")
 
 
+@router.get("/nodes/raw")
+async def list_nodes_raw(request: Request, include_stats: bool = True):
+    """
+    Passthrough-oriented dump of Nomad node data for discovery / production mapping.
+
+    Returns the raw `GET /v1/nodes` array plus, per node, the full read-node JSON,
+    full allocations list, and optionally client stats (best-effort; failures are
+    captured without failing the whole response).
+    """
+    nomad = request.app.state.nomad
+    try:
+        raw_list = await nomad.list_nodes()
+    except Exception as e:
+        logger.error(f"Failed raw list nodes: {e}")
+        raise HTTPException(status_code=502, detail=f"Nomad API error: {str(e)}")
+
+    nodes_out = []
+    for stub in raw_list:
+        # Local sanitize for raw dump only (does not change shared NomadClient behavior)
+        node_id = (stub.get("ID", "") or "").strip()
+        entry = {
+            "list_stub": stub,
+            "read_node": None,
+            "allocations": None,
+            "node_stats": None,
+            "partial_errors": {},
+        }
+        try:
+            entry["read_node"] = await nomad.get_node(node_id)
+        except Exception as e:
+            entry["partial_errors"]["read_node"] = str(e)
+        try:
+            entry["allocations"] = await nomad.get_node_allocations(node_id)
+        except Exception as e:
+            entry["partial_errors"]["allocations"] = str(e)
+        if include_stats:
+            try:
+                entry["node_stats"] = await nomad.get_node_stats(node_id)
+            except Exception as e:
+                entry["partial_errors"]["node_stats"] = str(e)
+        nodes_out.append(entry)
+
+    return {
+        "nomad_list_nodes": raw_list,
+        "nodes": nodes_out,
+        "include_stats": include_stats,
+    }
+
+
 @router.get("/nodes/{node_id}")
 async def get_node(request: Request, node_id: str):
     """
