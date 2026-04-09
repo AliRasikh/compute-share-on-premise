@@ -10,11 +10,23 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 
 logger = logging.getLogger("sovereign-compute.nodes")
 
 router = APIRouter()
+
+
+def _parse_bool_query(value: Optional[str], *, default: bool) -> bool:
+    """Parse query booleans; strip whitespace so values like 'true' plus newline still work."""
+    if value is None:
+        return default
+    s = str(value).strip().lower()
+    if s in ("true", "1", "yes", "on"):
+        return True
+    if s in ("false", "0", "no", "off", ""):
+        return False
+    return default
 
 
 def _summarize_nomad_client_stats(stats: Optional[dict]) -> Optional[dict[str, Any]]:
@@ -54,7 +66,10 @@ def _summarize_nomad_client_stats(stats: Optional[dict]) -> Optional[dict[str, A
 
 
 @router.get("/nodes")
-async def list_nodes(request: Request, include_stats: bool = False):
+async def list_nodes(
+    request: Request,
+    include_stats: Optional[str] = Query(None, description="Include per-node load_snapshot from Nomad client stats"),
+):
     """
     List all nodes in the cluster with their status and resources.
     
@@ -65,6 +80,7 @@ async def list_nodes(request: Request, include_stats: bool = False):
     - Running allocation count
     """
     nomad = request.app.state.nomad
+    want_stats = _parse_bool_query(include_stats, default=False)
     try:
         raw_nodes = await nomad.list_nodes()
         
@@ -180,7 +196,7 @@ async def list_nodes(request: Request, include_stats: bool = False):
             },
         }
 
-        if include_stats:
+        if want_stats:
             snapshot_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
             async def _fetch_stats(nid: str):
@@ -204,7 +220,10 @@ async def list_nodes(request: Request, include_stats: bool = False):
 
 
 @router.get("/nodes/raw")
-async def list_nodes_raw(request: Request, include_stats: bool = True):
+async def list_nodes_raw(
+    request: Request,
+    include_stats: Optional[str] = Query(None, description="Include Nomad client stats per node"),
+):
     """
     Passthrough-oriented dump of Nomad node data for discovery / production mapping.
 
@@ -213,6 +232,7 @@ async def list_nodes_raw(request: Request, include_stats: bool = True):
     captured without failing the whole response).
     """
     nomad = request.app.state.nomad
+    want_stats = _parse_bool_query(include_stats, default=True)
     try:
         raw_list = await nomad.list_nodes()
     except Exception as e:
@@ -238,7 +258,7 @@ async def list_nodes_raw(request: Request, include_stats: bool = True):
             entry["allocations"] = await nomad.get_node_allocations(node_id)
         except Exception as e:
             entry["partial_errors"]["allocations"] = str(e)
-        if include_stats:
+        if want_stats:
             try:
                 entry["node_stats"] = await nomad.get_node_stats(node_id)
             except Exception as e:
@@ -248,7 +268,7 @@ async def list_nodes_raw(request: Request, include_stats: bool = True):
     return {
         "nomad_list_nodes": raw_list,
         "nodes": nodes_out,
-        "include_stats": include_stats,
+        "include_stats": want_stats,
     }
 
 
