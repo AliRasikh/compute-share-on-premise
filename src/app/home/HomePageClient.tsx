@@ -27,7 +27,7 @@ export function HomePageClient() {
         <AnimatedSection delay={0.05}>
           <HomePosterSection
             title="Digital Sovereignty in the EU"
-            subtitle="Space for a campaign visual, product shot, or any message you want to highlight."
+            subtitle="Digital sovereignty means having control over your own data and infrastructure under laws you trust. In the EU today, this is crucial: too many companies still rely on foreign cloud providers, creating risks for control, compliance, and resilience. By keeping compute local, Europe strengthens independence and actively contributes to secure, EU-based digital infrastructure."
           />
         </AnimatedSection>
 
