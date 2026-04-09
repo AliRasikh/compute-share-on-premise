@@ -57,7 +57,10 @@ export function Header({
       className={`sticky top-0 z-20 shrink-0 border-b border-slate-200/80 bg-white/85 px-4 py-4 backdrop-blur md:px-6 ${className ?? ""}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+        <Link
+          href={pathname?.startsWith("/dashboard") ? "/dashboard" : "/"}
+          className="flex min-w-0 flex-1 items-center gap-3 no-underline"
+        >
           <CorimbLogoImg />
           <div className="min-w-0">
             {eyebrowText !== null ? (
@@ -67,7 +70,7 @@ export function Header({
             ) : null}
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
           </div>
-        </div>
+        </Link>
 
         {showNavigation || showProfileButton ? (
           <div className="flex flex-wrap items-center justify-end gap-4 sm:gap-6">
