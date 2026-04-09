@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  BarElement,
   CategoryScale,
   Chart as ChartJS,
   Filler,
@@ -13,11 +12,10 @@ import {
   Tooltip,
   type ChartOptions,
 } from "chart.js";
-import { Bar, Line } from "react-chartjs-2";
+import { Line } from "react-chartjs-2";
 import { BaseLayout } from "@/components/BaseLayout";
 
 ChartJS.register(
-  BarElement,
   CategoryScale,
   LinearScale,
   PointElement,
@@ -188,7 +186,7 @@ function ServerStatsCard({ server }: { server: ServerNode }) {
   const stateStyles =
     server.state === "running"
       ? {
-        badge: "border-slate-200 bg-slate-50 text-slate-700",
+        badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
       }
       : server.state === "warning"
         ? {
@@ -260,6 +258,12 @@ function ServerCard({ server }: { server: ServerNode }) {
 }
 
 export default function AdminDashboardPage() {
+  const [hiddenDatasets, setHiddenDatasets] = useState<Record<number, boolean>>({});
+
+  const toggleDataset = (index: number) => {
+    setHiddenDatasets((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
   const totalCapacity = useMemo(
     () => SERVERS.reduce((sum, server) => sum + server.capacity, 0),
     [],
@@ -293,13 +297,6 @@ export default function AdminDashboardPage() {
     () => SERVERS.reduce((sum, server) => sum + server.uptime, 0) / SERVERS.length,
     [],
   );
-  const avgLatency = useMemo(
-    () =>
-      SERVERS.filter((server) => server.latencyMs > 0).reduce((sum, server) => sum + server.latencyMs, 0) /
-      SERVERS.filter((server) => server.latencyMs > 0).length,
-    [],
-  );
-  const networkThroughput = useMemo(() => avgSpeed * 34.4, [avgSpeed]);
 
   const demandLineData = useMemo(
     () => ({
@@ -308,8 +305,9 @@ export default function AdminDashboardPage() {
         {
           label: "Aster Labs",
           data: SERVERS[0].demandSeries,
-          borderColor: "#0f172a",
-          backgroundColor: "rgba(15, 23, 42, 0.05)",
+          hidden: hiddenDatasets[0] ?? false,
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37, 99, 235, 0.05)",
           fill: true,
           tension: 0.35,
           borderWidth: 2,
@@ -318,7 +316,8 @@ export default function AdminDashboardPage() {
         {
           label: "Nova Systems",
           data: SERVERS[1].demandSeries,
-          borderColor: "#475569",
+          hidden: hiddenDatasets[1] ?? false,
+          borderColor: "#d97706",
           backgroundColor: "transparent",
           fill: false,
           tension: 0.35,
@@ -328,7 +327,8 @@ export default function AdminDashboardPage() {
         {
           label: "Helix Compute",
           data: SERVERS[2].demandSeries,
-          borderColor: "#94a3b8",
+          hidden: hiddenDatasets[2] ?? false,
+          borderColor: "#16a34a",
           backgroundColor: "transparent",
           fill: false,
           tension: 0.35,
@@ -338,7 +338,8 @@ export default function AdminDashboardPage() {
         {
           label: "Vertex Ops",
           data: SERVERS[3].demandSeries,
-          borderColor: "#cbd5e1",
+          hidden: hiddenDatasets[3] ?? false,
+          borderColor: "#dc2626",
           backgroundColor: "transparent",
           fill: false,
           tension: 0.35,
@@ -347,7 +348,7 @@ export default function AdminDashboardPage() {
         },
       ],
     }),
-    [],
+    [hiddenDatasets],
   );
 
   const demandLineOptions = useMemo<ChartOptions<"line">>(
@@ -357,8 +358,7 @@ export default function AdminDashboardPage() {
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: {
-          position: "top",
-          labels: { color: "#334155", boxWidth: 10, boxHeight: 10 },
+          display: false,
         },
       },
       scales: {
@@ -377,57 +377,6 @@ export default function AdminDashboardPage() {
       },
     }),
     [],
-  );
-
-  const demandBarData = useMemo(
-    () => ({
-      labels: SERVERS.map((server) => server.company),
-      datasets: [
-        {
-          label: "Peak demand %",
-          data: SERVERS.map((server) => Math.max(...server.demandSeries)),
-          backgroundColor: ["#0f172a", "#475569", "#94a3b8", "#cbd5e1"],
-          borderRadius: 4,
-        },
-        {
-          label: "Low demand %",
-          data: SERVERS.map((server) => Math.min(...server.demandSeries)),
-          backgroundColor: "#f1f5f9",
-          borderRadius: 4,
-        },
-      ],
-    }),
-    [],
-  );
-
-  const demandBarOptions = useMemo<ChartOptions<"bar">>(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: "#334155" } },
-      },
-      scales: {
-        x: {
-          ticks: { color: "#64748b" },
-          grid: { display: false },
-          border: { color: "#e2e8f0" },
-        },
-        y: {
-          ticks: { color: "#64748b" },
-          grid: { color: "#e2e8f0" },
-          border: { color: "#e2e8f0" },
-          beginAtZero: true,
-          suggestedMax: 100,
-        },
-      },
-    }),
-    [],
-  );
-
-  const cpuUtil = Math.round((totalUsed / totalCapacity) * 100);
-  const avgRam = Math.round(
-    SERVERS.reduce((sum, server) => sum + server.ramUsage, 0) / SERVERS.length,
   );
 
   return (
@@ -437,7 +386,7 @@ export default function AdminDashboardPage() {
         headerTitle="Corimb Dashboard"
       >
         <div className="space-y-6 p-4 md:p-6 xl:p-8">
-          <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-sm font-semibold text-slate-900">Compute Overview</p>
               <div className="mt-3 space-y-2">
@@ -512,7 +461,7 @@ export default function AdminDashboardPage() {
                 </span>
               </div>
 
-              <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-4">
+              <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-4">
                 {SERVERS.map((server) => (
                   <ServerCard key={server.id} server={server} />
                 ))}
@@ -520,66 +469,42 @@ export default function AdminDashboardPage() {
             </article>
           </section>
 
-          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <p className="text-base font-semibold text-slate-900">Demand Trends (24h)</p>
-              <p className="text-xs text-slate-500">Demand curves for each server/company.</p>
-              <div className="mt-4 h-72 rounded-xl border border-slate-200 bg-white p-3">
-                <Line data={demandLineData} options={demandLineOptions} />
-              </div>
-            </article>
-
-            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <p className="text-base font-semibold text-slate-900">Peak vs Low Demand by Server</p>
-              <p className="text-xs text-slate-500">Comparison of demand extremes for all 4 servers.</p>
-              <div className="mt-4 h-72 rounded-xl border border-slate-200 bg-white p-3">
-                <Bar data={demandBarData} options={demandBarOptions} />
-              </div>
-            </article>
-          </section>
-
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-2 items-stretch">
             <article className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <p className="text-base font-semibold text-slate-900">Compute Resource Statistics</p>
-              <div className="mt-4 flex flex-1 flex-col justify-between space-y-4">
-                <div>
-                  <div className="mb-1 flex justify-between text-xs text-slate-600">
-                    <span>Total CPU utilization</span>
-                    <span>{cpuUtil}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-100">
-                    <div
-                      className="h-2 rounded-full bg-slate-800"
-                      style={{ width: `${cpuUtil}%` }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1 flex justify-between text-xs text-slate-600">
-                    <span>Average RAM usage</span>
-                    <span>{avgRam}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-100">
-                    <div
-                      className="h-2 rounded-full bg-slate-600"
-                      style={{ width: `${avgRam}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    Network throughput
-                    <p className="mt-1 text-lg font-semibold text-slate-900">
-                      {networkThroughput.toFixed(1)} Gbps
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    Avg latency
-                    <p className="mt-1 text-lg font-semibold text-slate-900">
-                      {avgLatency.toFixed(1)} ms
-                    </p>
-                  </div>
-                </div>
+              <p className="text-base font-semibold text-slate-900">Demand Trends (24h)</p>
+              <p className="text-xs text-slate-500">Demand curves for each server/company.</p>
+              
+              <div className="mt-4 flex flex-wrap items-center gap-4">
+                {demandLineData.datasets.map((ds, idx) => {
+                  const isHidden = hiddenDatasets[idx] ?? false;
+                  return (
+                    <button
+                      key={ds.label}
+                      onClick={() => toggleDataset(idx)}
+                      className="flex items-center gap-2 text-xs sm:text-sm font-medium transition-colors"
+                      style={{ color: isHidden ? "#94a3b8" : "#334155" }}
+                    >
+                      <div 
+                        className="flex h-3.5 w-3.5 items-center justify-center rounded-[3px] border transition-colors"
+                        style={{ 
+                          backgroundColor: isHidden ? "transparent" : ds.borderColor as string,
+                          borderColor: ds.borderColor as string,
+                        }}
+                      >
+                        {!isHidden && (
+                          <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      {ds.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex-1 min-h-[16rem] rounded-xl border border-slate-200 bg-white p-3">
+                <Line data={demandLineData} options={demandLineOptions} />
               </div>
             </article>
 
