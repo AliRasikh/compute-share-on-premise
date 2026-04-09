@@ -58,16 +58,6 @@ client {
   enabled = false
 }
 
-if [ -n "$ADVERTISE_IP" ]; then
-cat >> /opt/nomad/config/nomad.hcl << ADVEOF
-advertise {
-  http = "${ADVERTISE_IP}:4646"
-  rpc  = "${ADVERTISE_IP}:4647"
-  serf = "${ADVERTISE_IP}:4648"
-}
-ADVEOF
-fi
-
 telemetry {
   publish_allocation_metrics = true
   publish_node_metrics       = true
@@ -83,6 +73,16 @@ plugin "raw_exec" {
 }
 HCLEOF
 
+if [ -n "$ADVERTISE_IP" ]; then
+cat >> /opt/nomad/config/nomad.hcl << ADVEOF
+
+advertise {
+  http = "${ADVERTISE_IP}:4646"
+  rpc  = "${ADVERTISE_IP}:4647"
+  serf = "${ADVERTISE_IP}:4648"
+}
+ADVEOF
+fi
 else
     # â”€â”€ Client Configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     cat > /opt/nomad/config/nomad.hcl << HCLEOF
