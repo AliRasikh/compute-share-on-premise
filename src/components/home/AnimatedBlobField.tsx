@@ -132,11 +132,11 @@ export function AnimatedBlobField({ variant }: AnimatedBlobFieldProps) {
           </div>
 
           <div
-            className={`pointer-events-none absolute inset-0 z-[1] rounded-[inherit] ${styles.veilClass}`}
+            className={`pointer-events-none absolute inset-0 z-1 rounded-[inherit] ${styles.veilClass}`}
           />
 
           <div
-            className={`pointer-events-none absolute inset-0 z-[2] rounded-[inherit] ${styles.vignetteOpacity} ${styles.vignetteClass}`}
+            className={`pointer-events-none absolute inset-0 z-2 rounded-[inherit] ${styles.vignetteOpacity} ${styles.vignetteClass}`}
             style={styles.vignetteStyle}
           />
         </>
