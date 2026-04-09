@@ -79,27 +79,9 @@ function sparklinePath(id: string): string {
   return segments;
 }
 
-const SERVER_IP = "95.179.248.242";
-
-// The real install command from the project's install.sh
-const INSTALL_COMMAND = `sudo ./install.sh \\
-  --server ${SERVER_IP}:4647 \\
+const INSTALL_COMMAND = `curl -fsSL https://corimb.garden/install | sudo bash -s -- \\
   --company "your-company" \\
   --datacenter "eu-west"`;
-
-const INSTALL_STEPS = [
-  {
-    step: 1,
-    title: "Download the installer",
-    command: `git clone https://github.com/AliRasikh/compute-share-on-premise.git
-cd compute-share-on-premise/backend/installer`,
-  },
-  {
-    step: 2,
-    title: "Run the install script",
-    command: INSTALL_COMMAND,
-  },
-];
 
 // ── Component ───────────────────────────────────────────────────────────────
 
@@ -436,47 +418,39 @@ export default function MyNodesPage() {
             {/* Body */}
             <div className="p-6 flex flex-col gap-5 max-h-[70vh] overflow-y-auto">
               <p className="text-sm text-slate-700 leading-relaxed">
-                Run the following commands on your <strong>Linux machine</strong> (Ubuntu/Debian recommended)
-                to install the Nomad client and join the Sovereign Compute cluster.
+                Run this single command on any <strong>Linux machine</strong> (Ubuntu/Debian recommended)
+                to join the Corimb compute cluster.
               </p>
 
-              {INSTALL_STEPS.map(({ step, title, command }, idx) => (
-                <div key={step} className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
-                      {step}
+              {/* Single command block */}
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-semibold text-slate-800">Install &amp; join the cluster</p>
+                <div className="bg-slate-900 rounded-lg p-4 relative group">
+                  <pre className="text-xs font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
+                    {INSTALL_COMMAND}
+                  </pre>
+                  <button
+                    onClick={() => handleCopy(INSTALL_COMMAND, 0)}
+                    aria-label="Copy to clipboard"
+                    className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 text-white p-1.5 rounded transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-center"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
+                      {copiedIdx === 0 ? "check" : "content_copy"}
                     </span>
-                    <p className="text-sm font-semibold text-slate-800">{title}</p>
-                  </div>
-                  <div className="bg-slate-900 rounded-lg p-4 relative group">
-                    <pre className="text-xs font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
-                      {command}
-                    </pre>
-                    <button
-                      onClick={() => handleCopy(command, idx)}
-                      aria-label="Copy to clipboard"
-                      className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 text-white p-1.5 rounded transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-center"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>
-                        {copiedIdx === idx ? "check" : "content_copy"}
-                      </span>
-                    </button>
-                  </div>
+                  </button>
                 </div>
-              ))}
+              </div>
 
-              {/* Customization hint */}
+              {/* Options */}
               <div className="flex flex-col gap-2 bg-slate-50 rounded-lg p-4 border border-slate-100">
-                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Available Install Options</p>
+                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Options</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-600 font-mono">
-                  <span>--server ADDR</span>
-                  <span className="text-slate-400">Nomad server (required)</span>
                   <span>--company NAME</span>
-                  <span className="text-slate-400">Your org name</span>
+                  <span className="text-slate-400">Your organization name</span>
                   <span>--datacenter DC</span>
-                  <span className="text-slate-400">Datacenter label</span>
+                  <span className="text-slate-400">Datacenter label (e.g. eu-west)</span>
                   <span>--skip-docker</span>
-                  <span className="text-slate-400">If Docker is already installed</span>
+                  <span className="text-slate-400">Skip Docker installation</span>
                 </div>
               </div>
 
@@ -486,9 +460,9 @@ export default function MyNodesPage() {
                   info
                 </span>
                 <p>
-                  The script installs <strong>Nomad</strong>, <strong>Docker</strong>, and{" "}
-                  <strong>node_exporter</strong>. Ensure your firewall allows outbound connections on port{" "}
-                  <strong>4647</strong>. The node will appear in this dashboard within 2-3 minutes.
+                  The installer automatically provisions your machine with the compute agent and
+                  connects it to <strong>corimb.garden</strong>. The node will appear in this dashboard
+                  within 2–3 minutes.
                 </p>
               </div>
             </div>
