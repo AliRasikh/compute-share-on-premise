@@ -338,7 +338,7 @@ client {
     "gpu_type"      = "${GPU_TYPE}"
     "gpu_present"   = "${GPU_PRESENT}"
     "install_date"  = "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-    "node_exporter" = "http://{{ env "attr.unique.network.ip-address" }}:9100"
+    "node_exporter" = "http://$(hostname -I | awk '{print $1}'):9100"
   }
 
   # Reserve resources for the OS
