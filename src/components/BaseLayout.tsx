@@ -19,7 +19,6 @@ type BaseLayoutProps = {
 
 /**
  * App shell: `Header` + scrollable `main` + `Footer`.
- * (`WorkspaceSidebar` remains available as a standalone component when needed.)
  */
 export function BaseLayout({
   children,
