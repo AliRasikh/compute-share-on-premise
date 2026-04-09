@@ -87,7 +87,6 @@ export const BLOB_LAYOUTS: BlobLayout[] = [
   },
 ];
 
-/** Dark hero (Compute Exchange) */
 export const HERO_BLOB_BACKGROUNDS = [
   "rgba(59, 130, 246, 0.42)",
   "rgba(99, 102, 241, 0.38)",

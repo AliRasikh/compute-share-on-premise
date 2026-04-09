@@ -528,7 +528,7 @@ export default function AdminDashboardPage() {
     <div className="flex min-h-screen w-full flex-1 flex-col text-slate-900">
       <BaseLayout
         headerEyebrow="Platform Operations"
-        headerTitle="Compute Exchange Dashboard"
+        headerTitle="Corimb Dashboard"
       >
         <div className="space-y-6 p-4 md:p-6 xl:p-8">
             <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">

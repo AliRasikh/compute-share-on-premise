@@ -120,24 +120,6 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-end">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">Network Dashboard</h2>
-          <p className="mt-2 text-slate-500 text-lg">Real-time compute aggregation and trading metrics.</p>
-        </div>
-        <button
-          onClick={runAiDemo}
-          disabled={aiDemoLoading}
-          className="bg-[#08dd9a] hover:bg-[#06c98a] text-white px-6 py-3 rounded-lg font-bold shadow-lg shadow-[#08dd9a]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          {aiDemoLoading ? (
-            <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-          ) : (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-          )}
-          {aiDemoLoading ? "Deploying..." : "Run AI Job"}
-        </button>
-      </div>
 
       {aiDemoMessage && (
         <div className="p-4 bg-slate-800 text-emerald-400 rounded-lg font-mono text-sm shadow-inner flex items-center gap-3">

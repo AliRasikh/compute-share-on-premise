@@ -127,7 +127,7 @@ export function WorkspaceSidebar({
   mobileOpen,
   onMobileOpenChange,
   desktopOpen = true,
-  brandEyebrow = "Compute Exchange",
+  brandEyebrow = "Corimb",
   brandTitle = "Company Console",
   items = DEFAULT_WORKSPACE_SIDEBAR_ITEMS,
   activeItemId = "add-job",
