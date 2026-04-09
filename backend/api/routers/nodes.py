@@ -29,17 +29,37 @@ def _parse_bool_query(value: Optional[str], *, default: bool) -> bool:
     return default
 
 
+def _cpu_core_util_percent(core: dict) -> Optional[float]:
+    """
+    Nomad client stats CPU entries vary by version:
+    - Prefer `Total` (non-idle % per core) when present.
+    - Else `Percent` if present.
+    - Else derive from `Idle` (100 - Idle) as utilization %.
+    """
+    t = core.get("Total")
+    if isinstance(t, (int, float)):
+        return float(t)
+    p = core.get("Percent")
+    if isinstance(p, (int, float)):
+        return float(p)
+    idle = core.get("Idle")
+    if isinstance(idle, (int, float)):
+        return max(0.0, min(100.0, 100.0 - float(idle)))
+    return None
+
+
 def _summarize_nomad_client_stats(stats: Optional[dict]) -> Optional[dict[str, Any]]:
     """Derive CPU %, memory %, and a single combined load % from Nomad /v1/client/stats JSON."""
     if not stats:
         return None
     cpu_list = stats.get("CPU") or []
-    totals: list[float] = []
+    core_utils: list[float] = []
     for c in cpu_list:
-        t = c.get("Total")
-        if isinstance(t, (int, float)):
-            totals.append(float(t))
-    cpu_pct = sum(totals) / len(totals) if totals else None
+        if isinstance(c, dict):
+            u = _cpu_core_util_percent(c)
+            if u is not None:
+                core_utils.append(u)
+    cpu_pct = sum(core_utils) / len(core_utils) if core_utils else None
 
     mem = stats.get("Memory") or {}
     total = mem.get("Total", 0) or 0

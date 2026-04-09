@@ -56,6 +56,32 @@ type LogsResponse = {
   task?: string;
 };
 
+/** Python workload: sustained CPU load for 5 minutes (Nomad batch / raw_exec). */
+function buildCpuStressCode(): string {
+  return `import time, platform, os
+
+DURATION_SEC = 300
+print("=" * 60)
+print("  SOVEREIGN COMPUTE — CPU stress (5 minutes)")
+print("  Node:", platform.node(), "|", DURATION_SEC, "seconds")
+print("=" * 60)
+
+deadline = time.time() + DURATION_SEC
+ticks = 0
+while time.time() < deadline:
+    x = 0.0
+    for i in range(50000):
+        x += (i * 13.37) % 9973.0
+    ticks += 1
+    if ticks % 80 == 0:
+        left = max(0, int(deadline - time.time()))
+        print(f"  tick {ticks} — ~{left}s left | partial checksum {x:.2f}")
+
+print("  Stress finished.")
+print("=" * 60)
+`;
+}
+
 // ── Preset Templates ────────────────────────────────────────────────────────
 
 const PRESETS = [
@@ -225,6 +251,15 @@ print("\\n" + "=" * 60)
 `,
   },
   {
+    id: "cpu-stress",
+    label: "CPU stress",
+    icon: "🧱",
+    description: "Sustained CPU load for 5 minutes, then the job exits.",
+    cpu: 2000,
+    memory: 512,
+    code: buildCpuStressCode(),
+  },
+  {
     id: "custom",
     label: "Custom Code",
     icon: "🐍",
@@ -311,6 +346,8 @@ export default function ComputePage() {
   const phaseRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logRef = useRef<HTMLPreElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  /** When true, user closed the modal — stop polling for logs; Nomad job keeps running. */
+  const pollDismissedRef = useRef(false);
 
   // ── Fetch nodes ──────────────────────────────────────────────────────────
   const fetchNodes = useCallback(async () => {
@@ -382,17 +419,22 @@ export default function ComputePage() {
   }, []);
 
   const openDeployModal = (node: ClusterNode) => {
+    pollDismissedRef.current = false;
     setDeployNode(node);
     selectPreset(PRESETS[0]);
   };
 
   const closeDeployModal = () => {
-    if (isRunning) return;
+    if (isRunning) {
+      pollDismissedRef.current = true;
+      setIsRunning(false);
+    }
     setDeployNode(null);
     setLogs(null);
     setError(null);
     setJobId(null);
     setGeneratedImage(null);
+    setCurrentPhase(0);
   };
 
   // ── Image extraction ─────────────────────────────────────────────────────
@@ -419,6 +461,9 @@ export default function ComputePage() {
   // ── Submit & Poll ────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!code.trim()) { setError("No code to execute."); return; }
+    const isCpuStress = selectedPreset.id === "cpu-stress";
+
+    pollDismissedRef.current = false;
     setIsRunning(true);
     setCurrentPhase(0);
     setElapsedTime(0);
@@ -428,10 +473,19 @@ export default function ComputePage() {
     setGeneratedImage(null);
 
     try {
+      const jobName = isCpuStress
+        ? `cpu-stress-${deployNode?.short_id ?? "node"}-${Date.now() % 1_000_000_000}`
+        : undefined;
       const submitRes = await fetch("/api/compute/jobs/compute-run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, cpu, memory }),
+        body: JSON.stringify({
+          code,
+          cpu,
+          memory,
+          ...(jobName ? { name: jobName } : {}),
+          ...(deployNode?.company ? { company: deployNode.company } : {}),
+        }),
       });
       const submitData = (await submitRes.json()) as SubmitResponse;
       if (!submitRes.ok) {
@@ -440,26 +494,43 @@ export default function ComputePage() {
         return;
       }
 
+      if (pollDismissedRef.current) {
+        setIsRunning(false);
+        return;
+      }
+
       const id = submitData.job_id;
       setJobId(id);
       setCurrentPhase(2);
 
-      const deadline = Date.now() + 120_000;
+      const pollMs = isCpuStress ? 480_000 : 120_000;
+      const deadline = Date.now() + pollMs;
       let finalLogs: LogsResponse | null = null;
-      while (Date.now() < deadline) {
+
+      while (Date.now() < deadline && !pollDismissedRef.current) {
         await new Promise((r) => setTimeout(r, 3000));
+        if (pollDismissedRef.current) break;
         try {
           const logsRes = await fetch(`/api/compute/jobs/${id}/logs`);
           if (!logsRes.ok) continue;
           const logsData = (await logsRes.json()) as LogsResponse;
+
           if (logsData.status === "complete" || logsData.status === "failed") {
             finalLogs = logsData;
             break;
           }
+
           if (logsData.output || logsData.stderr) finalLogs = logsData;
         } catch { /* retry */ }
-        setCurrentPhase((p) => Math.min(PHASES.length - 1, p + 1));
+        if (!pollDismissedRef.current) {
+          setCurrentPhase((p) => Math.min(PHASES.length - 1, p + 1));
+        }
       }
+
+      if (pollDismissedRef.current) {
+        return;
+      }
+
       if (finalLogs) {
         setLogs(finalLogs);
         if (finalLogs.output) {
@@ -467,18 +538,23 @@ export default function ComputePage() {
           if (img) setGeneratedImage(img);
         }
       } else {
-        setError(`Job '${id}' submitted but timed out. Check logs manually.`);
+        setError(`Job '${id}' submitted but timed out waiting for logs. Check Nomad or try again.`);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to submit job.");
+      if (!pollDismissedRef.current) {
+        setError(e instanceof Error ? e.message : "Failed to submit job.");
+      }
     } finally {
-      setIsRunning(false);
+      if (!pollDismissedRef.current) {
+        setIsRunning(false);
+      }
     }
   };
 
   const statusColor = (s: string) => {
     if (s === "complete") return "text-emerald-400";
     if (s === "failed") return "text-rose-400";
+    if (s === "running") return "text-amber-400";
     return "text-amber-400";
   };
 
@@ -874,7 +950,12 @@ export default function ComputePage() {
                   {deployNode.datacenter} • {deployNode.address || deployNode.short_id} • {formatMemory(deployNode.resources.memory_mb)} RAM
                 </p>
               </div>
-              <button onClick={closeDeployModal} className="text-slate-400 hover:text-slate-600 transition-colors">
+              <button
+                type="button"
+                onClick={closeDeployModal}
+                title={isRunning ? "Close — job keeps running on the cluster" : "Close"}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -883,7 +964,7 @@ export default function ComputePage() {
               {/* Preset Selection */}
               <div>
                 <p className="text-sm font-semibold text-slate-700 mb-3">Choose a workload</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   {PRESETS.map((preset) => (
                     <button
                       key={preset.id}
@@ -966,6 +1047,9 @@ export default function ComputePage() {
               {/* Running Progress */}
               {isRunning && (
                 <div className="bg-slate-900 rounded-xl border border-slate-700 p-5 space-y-3">
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    You can close this window — the workload keeps running on the cluster. This dialog only waits for logs.
+                  </p>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 border-[3px] border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
@@ -1012,16 +1096,26 @@ export default function ComputePage() {
               {/* Results */}
               {logs && !isRunning && (
                 <div ref={resultRef} className="space-y-4">
-                  <div className={`rounded-xl p-4 flex items-center gap-3 ${
-                    logs.status === "complete" ? "bg-emerald-50 border border-emerald-200" : "bg-rose-50 border border-rose-200"
-                  }`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                      logs.status === "complete" ? "bg-blue-600" : "bg-rose-500"
-                    }`}>
+                  <div
+                    className={`rounded-xl p-4 flex items-center gap-3 border ${
+                      logs.status === "complete"
+                        ? "bg-emerald-50 border-emerald-200"
+                        : logs.status === "running"
+                          ? "bg-amber-50 border-amber-200"
+                          : "bg-rose-50 border-rose-200"
+                    }`}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                        logs.status === "complete" ? "bg-blue-600" : logs.status === "running" ? "bg-amber-500" : "bg-rose-500"
+                      }`}
+                    >
                       {logs.status === "complete" ? (
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                         </svg>
+                      ) : logs.status === "running" ? (
+                        <span className="text-white text-lg leading-none">∞</span>
                       ) : (
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
@@ -1030,11 +1124,20 @@ export default function ComputePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-bold text-slate-800 text-sm">
-                        {logs.status === "complete" ? "✅ Executed on Remote Node" : "❌ Execution Failed"}
+                        {logs.status === "complete"
+                          ? "✅ Executed on Remote Node"
+                          : logs.status === "running"
+                            ? "⏳ Task still running"
+                            : "❌ Execution Failed"}
                       </div>
-                      <div className="text-xs text-slate-600 flex gap-x-3 mt-0.5">
+                      <div className="text-xs text-slate-600 flex flex-wrap gap-x-3 mt-0.5">
                         <span>Node: <strong className="font-mono">{logs.node}</strong></span>
                         <span>Time: <strong>{elapsedTime}s</strong></span>
+                        {logs.status === "running" && jobId ? (
+                          <span className="text-amber-800">
+                            Job <strong className="font-mono">{jobId}</strong>
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -1083,8 +1186,13 @@ export default function ComputePage() {
 
             {/* Footer */}
             <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
-              <button onClick={closeDeployModal} disabled={isRunning} className="px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-200 transition disabled:opacity-50">
-                {logs ? "Close" : "Cancel"}
+              <button
+                type="button"
+                onClick={closeDeployModal}
+                title={isRunning ? "Close — job continues on the cluster" : undefined}
+                className="px-5 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-200 transition"
+              >
+                {isRunning ? "Close" : logs ? "Close" : "Cancel"}
               </button>
               {!logs && (
                 <button
