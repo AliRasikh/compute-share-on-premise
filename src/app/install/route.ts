@@ -10,11 +10,24 @@
  *     --datacenter "eu-west"
  */
 
+import { resolve } from 'path';
+import { readFile } from 'fs/promises';
+
 const SERVER_ADDR = "95.179.248.242:4647";
 const INSTALLER_URL =
   "https://raw.githubusercontent.com/AliRasikh/compute-share-on-premise/main/backend/installer/install.sh";
 
-const script = `#!/usr/bin/env bash
+export async function GET() {
+  let headscaleKey = "";
+  try {
+    const keyPath = resolve(process.cwd(), 'backend', 'headscale', 'data', 'current_auth_key.txt');
+    headscaleKey = await readFile(keyPath, "utf-8");
+    headscaleKey = headscaleKey.trim();
+  } catch (e) {
+    console.warn("Headscale key not found natively on disk, running without it.");
+  }
+
+  const script = `#!/usr/bin/env bash
 # ============================================================================
 # Corimb Compute — Node Bootstrap
 # Downloads and runs the full installer with the cluster server pre-configured.
@@ -70,7 +83,11 @@ echo -e "\${GREEN}[✓]\${NC}       Server pre-configured: \${BOLD}\${SERVER}\${
 echo -e "\${GREEN}[✓]\${NC}       Starting installation...\\n"
 
 # Run the full installer, injecting --server and forwarding all user args
-bash "\${TMPFILE}" --server "\${SERVER}" "$@"
+if [ -n "${headscaleKey}" ]; then
+  bash "\${TMPFILE}" --server "\${SERVER}" --headscale-url "https://headscale.corimb.garden" --headscale-key "${headscaleKey}" "$@"
+else
+  bash "\${TMPFILE}" --server "\${SERVER}" "$@"
+fi
 EXIT_CODE=$?
 
 # Cleanup
@@ -79,7 +96,6 @@ rm -f "\${TMPFILE}" 2>/dev/null || true
 exit \${EXIT_CODE}
 `;
 
-export async function GET() {
   return new Response(script, {
     status: 200,
     headers: {

@@ -56,6 +56,8 @@ DATA_DIR="/opt/nomad"
 SKIP_DOCKER=false
 SKIP_EXPORTER=false
 DRY_RUN=false
+HEADSCALE_URL=""
+HEADSCALE_KEY=""
 
 # ── Parse Args ──────────────────────────────────────────────────────────────
 usage() {
@@ -70,6 +72,8 @@ usage() {
     echo "  --node-pool POOL      Node pool name (default: shared)"
     echo "  --data-dir DIR        Nomad data directory (default: /opt/nomad)"
     echo "  --nomad-version VER   Nomad version to install (default: ${NOMAD_VERSION})"
+    echo "  --headscale-url URL   URL of Headscale control plane to join VPN mesh"
+    echo "  --headscale-key KEY   Headscale pre-auth key (required if url provided)"
     echo "  --skip-docker         Skip Docker installation"
     echo "  --skip-exporter       Skip node_exporter installation"
     echo "  --dry-run             Show what would be done without executing"
@@ -85,6 +89,8 @@ while [[ $# -gt 0 ]]; do
         --node-pool)     NODE_POOL="$2"; shift 2 ;;
         --data-dir)      DATA_DIR="$2"; shift 2 ;;
         --nomad-version) NOMAD_VERSION="$2"; shift 2 ;;
+        --headscale-url) HEADSCALE_URL="$2"; shift 2 ;;
+        --headscale-key) HEADSCALE_KEY="$2"; shift 2 ;;
         --skip-docker)   SKIP_DOCKER=true; shift ;;
         --skip-exporter) SKIP_EXPORTER=true; shift ;;
         --dry-run)       DRY_RUN=true; shift ;;
@@ -96,6 +102,12 @@ done
 # ── Validation ──────────────────────────────────────────────────────────────
 if [[ -z "$NOMAD_SERVER" ]]; then
     log_error "Missing required --server argument"
+    echo ""
+    usage
+fi
+
+if [[ -n "$HEADSCALE_URL" && -z "$HEADSCALE_KEY" ]]; then
+    log_error "Missing required --headscale-key argument when using --headscale-url"
     echo ""
     usage
 fi
@@ -293,6 +305,28 @@ EOF
     log_success "node_exporter installed and listening on :9100"
 }
 
+# ── Install and Configure Tailscale ─────────────────────────────────────────
+install_tailscale() {
+    if [[ -z "$HEADSCALE_URL" ]]; then
+        return
+    fi
+    
+    if command -v tailscale &> /dev/null; then
+        log_success "Tailscale already installed"
+    else
+        log_step "Installing Tailscale"
+        curl -fsSL https://tailscale.com/install.sh | sh
+        systemctl enable --now tailscaled
+        log_success "Tailscale installed and started"
+    fi
+    
+    log_step "Connecting to Headscale mesh at $HEADSCALE_URL"
+    tailscale up --login-server="$HEADSCALE_URL" --authkey="$HEADSCALE_KEY" --accept-routes
+    
+    log_success "Connected to Headscale mesh network"
+    sleep 2 # Ensure interface settles
+}
+
 # ── Configure Nomad Client ──────────────────────────────────────────────────
 configure_nomad() {
     log_step "Configuring Nomad Client"
@@ -301,11 +335,17 @@ configure_nomad() {
     RESERVED_CPU=$((CPU_CORES * 100))  # Reserve 100MHz per core
     RESERVED_MEM=$((TOTAL_MEM_MB / 10))  # Reserve 10% memory
     
-    # Detect public IP (used for advertise block so the server sees our real IP)
-    PUBLIC_IP=$(curl -s --max-time 3 https://ifconfig.me 2>/dev/null || \
-                curl -s --max-time 3 https://api.ipify.org 2>/dev/null || \
-                hostname -I | awk '{print $1}')
-    log_step "Detected public IP: ${PUBLIC_IP}"
+    # Detect IP strictly for advertising to the Nomad server.
+    # If joined to Headscale, use the Tailscale VPN IP instead of the public IP.
+    if [[ -n "$HEADSCALE_URL" ]] && command -v tailscale &> /dev/null; then
+        ADVERTISE_IP=$(tailscale ip -4)
+        log_info "Using Tailscale VPN IP: ${ADVERTISE_IP}"
+    else
+        ADVERTISE_IP=$(curl -s --max-time 3 https://ifconfig.me 2>/dev/null || \
+                    curl -s --max-time 3 https://api.ipify.org 2>/dev/null || \
+                    hostname -I | awk '{print $1}')
+        log_info "Detected public IP: ${ADVERTISE_IP}"
+    fi
     
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     CONFIG_FILE="${DATA_DIR}/config/client.hcl"
@@ -324,11 +364,11 @@ data_dir   = "${DATA_DIR}/data"
 # Bind to all interfaces
 bind_addr = "0.0.0.0"
 
-# Advertise the public IP so the server and other nodes can reach us
+# Advertise the IP so the server and other nodes can reach us
 advertise {
-  http = "${PUBLIC_IP}:4646"
-  rpc  = "${PUBLIC_IP}:4647"
-  serf = "${PUBLIC_IP}:4648"
+  http = "${ADVERTISE_IP}:4646"
+  rpc  = "${ADVERTISE_IP}:4647"
+  serf = "${ADVERTISE_IP}:4648"
 }
 
 # ── Client Configuration ────────────────────────────────────────────────────
@@ -351,7 +391,7 @@ client {
     "gpu_type"      = "${GPU_TYPE}"
     "gpu_present"   = "${GPU_PRESENT}"
     "install_date"  = "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-    "node_exporter" = "http://${PUBLIC_IP}:9100"
+    "node_exporter" = "http://${ADVERTISE_IP}:9100"
   }
 
   # Reserve resources for the OS
@@ -520,6 +560,7 @@ main() {
     install_docker
     install_nomad
     install_node_exporter
+    install_tailscale
     configure_nomad
     create_nomad_service
     health_check
