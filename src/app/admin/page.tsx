@@ -14,6 +14,9 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { BaseLayout } from "@/components/BaseLayout";
+import { Space_Grotesk } from "next/font/google";
+
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] });
 
 ChartJS.register(
   CategoryScale,
@@ -380,7 +383,7 @@ export default function AdminDashboardPage() {
   );
 
   return (
-    <div className="flex min-h-screen w-full flex-1 flex-col text-slate-900">
+    <div className={`flex min-h-screen w-full flex-1 flex-col text-slate-900 ${spaceGrotesk.className}`}>
       <BaseLayout
         headerEyebrow="Platform Operations"
         headerTitle="Corimb Dashboard"
