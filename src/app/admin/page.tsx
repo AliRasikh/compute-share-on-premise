@@ -14,7 +14,7 @@ import {
   type ChartOptions,
 } from "chart.js";
 import { Bar, Line } from "react-chartjs-2";
-import { AdminSidebar, AdminSidebarToggleButton } from "@/components/admin/AdminSidebar";
+import { BaseLayout } from "@/components/BaseLayout";
 
 ChartJS.register(
   BarElement,
@@ -354,8 +354,6 @@ function ServerCard({ server }: { server: ServerNode }) {
 }
 
 export default function AdminDashboardPage() {
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-
   const totalCapacity = useMemo(
     () => SERVERS.reduce((sum, server) => sum + server.capacity, 0),
     [],
@@ -527,39 +525,12 @@ export default function AdminDashboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[240px_1fr]">
-        <AdminSidebar mobileOpen={mobileSidebarOpen} onMobileOpenChange={setMobileSidebarOpen} />
-
-        <div>
-          <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/85 px-4 py-4 backdrop-blur md:px-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex min-w-0 flex-1 items-start gap-3">
-                <AdminSidebarToggleButton
-                  mobileOpen={mobileSidebarOpen}
-                  onOpen={() => setMobileSidebarOpen(true)}
-                />
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
-                    Platform Operations
-                  </p>
-                  <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                    Compute Exchange Dashboard
-                  </h1>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-                  Platform healthy
-                </span>
-                <span className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">
-                  Last 24 hours
-                </span>
-              </div>
-            </div>
-          </header>
-
-          <main className="space-y-6 p-4 md:p-6 xl:p-8">
+    <div className="flex min-h-screen w-full flex-1 flex-col text-slate-900">
+      <BaseLayout
+        headerEyebrow="Platform Operations"
+        headerTitle="Compute Exchange Dashboard"
+      >
+        <div className="space-y-6 p-4 md:p-6 xl:p-8">
             <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
               <KpiCard label="Total compute available" value={`${totalCapacity} vCPU`} sub="Across 4 company servers" />
               <KpiCard label="Compute allocated/shared" value={`${totalShared} vCPU`} sub="Exported into shared pool" />
@@ -709,9 +680,8 @@ export default function AdminDashboardPage() {
                 </div>
               </article>
             </section>
-          </main>
         </div>
-      </div>
+      </BaseLayout>
     </div>
   );
 }
