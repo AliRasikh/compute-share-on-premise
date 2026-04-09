@@ -40,7 +40,7 @@ const DEFAULT_TITLE = "Corimb";
 export function Header({
   eyebrow,
   title = DEFAULT_TITLE,
-  initials = "CO",
+  initials = "D",
   avatarSrc,
   dashboardHref = "/dashboard",
   newTaskHref = "/dashboard/compute",
@@ -52,6 +52,7 @@ export function Header({
 }: HeaderProps) {
   const eyebrowText = eyebrow === undefined ? DEFAULT_EYEBROW : eyebrow;
   const pathname = usePathname();
+  const isAdmin = pathname?.startsWith("/admin");
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -98,31 +99,45 @@ export function Header({
           <div className="flex flex-wrap items-center justify-end gap-4 sm:gap-6">
             {showNavigation ? (
               <nav className="flex items-center gap-4 sm:gap-6" aria-label="Workspace">
-                <Link
-                  href={dashboardHref}
-                  className={
-                    pathname === dashboardHref || pathname === "/admin" || pathname === "/"
-                      ? activeNavTextClass
-                      : navTextClass
-                  }
-                >
-                  Dashboard
-                </Link>
-                <Link href="/dashboard/my-nodes" className={navTextClass}>
-                  My Nodes
-                </Link>
-                {onNewTaskClick ? (
-                  <button
-                    type="button"
-                    onClick={onNewTaskClick}
-                    className={`${navTextClass} cursor-pointer border-0 bg-transparent p-0 font-sans`}
+                {isAdmin ? (
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-blue-600 no-underline"
                   >
-                    New Task
-                  </button>
-                ) : (
-                  <Link href={newTaskHref} className={navTextClass}>
-                    New Task
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Switch to User Account
                   </Link>
+                ) : (
+                  <>
+                    <Link
+                      href={dashboardHref}
+                      className={
+                        pathname === dashboardHref || pathname === "/"
+                          ? activeNavTextClass
+                          : navTextClass
+                      }
+                    >
+                      Dashboard
+                    </Link>
+                    <Link href="/dashboard/my-nodes" className={navTextClass}>
+                      My Nodes
+                    </Link>
+                    {onNewTaskClick ? (
+                      <button
+                        type="button"
+                        onClick={onNewTaskClick}
+                        className={`${navTextClass} cursor-pointer border-0 bg-transparent p-0 font-sans`}
+                      >
+                        New Task
+                      </button>
+                    ) : (
+                      <Link href={newTaskHref} className={navTextClass}>
+                        New Task
+                      </Link>
+                    )}
+                  </>
                 )}
               </nav>
             ) : null}
