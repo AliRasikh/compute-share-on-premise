@@ -103,6 +103,10 @@ class NomadClient:
         """Get detailed allocation info."""
         return await self._get(f"/allocation/{alloc_id}")
 
+    async def get_allocation_stats(self, alloc_id: str) -> dict:
+        """Resource usage for a running allocation (client API)."""
+        return await self._get(f"/client/allocation/{alloc_id}/stats")
+
     async def get_alloc_logs(
         self, alloc_id: str, task: str, log_type: str = "stdout", plain: bool = True
     ) -> str:

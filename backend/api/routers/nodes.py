@@ -29,75 +29,112 @@ def _parse_bool_query(value: Optional[str], *, default: bool) -> bool:
     return default
 
 
-def _cpu_core_util_percent(core: dict) -> Optional[float]:
+def _memory_rss_bytes_from_alloc_stats(st: dict) -> int:
+    """Sum RSS from Nomad allocation stats (aggregate ResourceUsage and per-task)."""
+    ru = st.get("ResourceUsage") or {}
+    ms = ru.get("MemoryStats") or {}
+    rss = ms.get("RSS")
+    if isinstance(rss, (int, float)) and rss > 0:
+        return int(rss)
+    total = 0
+    for t in (st.get("Tasks") or {}).values():
+        if not isinstance(t, dict):
+            continue
+        ru2 = t.get("ResourceUsage") or {}
+        ms2 = ru2.get("MemoryStats") or {}
+        r2 = ms2.get("RSS")
+        if isinstance(r2, (int, float)):
+            total += int(r2)
+    return total
+
+
+def _cpu_percent_from_single_alloc_stats(st: dict) -> Optional[float]:
     """
-    Nomad client stats CPU entries vary by version:
-    - Prefer `Total` (non-idle % per core) when present.
-    - Else `Percent` if present.
-    - Else derive from `Idle` (100 - Idle) as utilization %.
+    Nomad /client/allocation/:id/stats — CpuStats.Percent is typically 0–100
+    (share of allocated CPU). Fall back to per-task stats when aggregate is empty.
     """
-    t = core.get("Total")
-    if isinstance(t, (int, float)):
-        return float(t)
-    p = core.get("Percent")
+    ru = st.get("ResourceUsage") or {}
+    cs = ru.get("CpuStats") or {}
+    p = cs.get("Percent")
     if isinstance(p, (int, float)):
         return float(p)
-    idle = core.get("Idle")
-    if isinstance(idle, (int, float)):
-        return max(0.0, min(100.0, 100.0 - float(idle)))
-    return None
-
-
-def _summarize_nomad_client_stats(stats: Optional[dict]) -> Optional[dict[str, Any]]:
-    """Derive CPU %, memory %, and a single combined load % from Nomad /v1/client/stats JSON."""
-    if not stats:
+    tasks = st.get("Tasks") or {}
+    parts: list[float] = []
+    for t in tasks.values():
+        if not isinstance(t, dict):
+            continue
+        ru2 = t.get("ResourceUsage") or {}
+        cs2 = ru2.get("CpuStats") or {}
+        p2 = cs2.get("Percent")
+        if isinstance(p2, (int, float)):
+            parts.append(float(p2))
+    if not parts:
         return None
-    cpu_list = stats.get("CPU") or []
-    core_utils: list[float] = []
-    for c in cpu_list:
-        if isinstance(c, dict):
-            u = _cpu_core_util_percent(c)
-            if u is not None:
-                core_utils.append(u)
-    cpu_pct = sum(core_utils) / len(core_utils) if core_utils else None
+    return sum(parts) / len(parts)
 
-    mem = stats.get("Memory") or {}
-    total = mem.get("Total", 0) or 0
-    used = mem.get("Used", 0) or 0
-    mem_pct = (used / total * 100.0) if total > 0 else None
 
-    if cpu_pct is not None and mem_pct is not None:
-        load_pct = (cpu_pct + mem_pct) / 2.0
-    elif cpu_pct is not None:
-        load_pct = cpu_pct
-    elif mem_pct is not None:
-        load_pct = mem_pct
-    else:
+async def _workload_snapshot_from_allocations(
+    nomad: Any,
+    node_id: str,
+    memory_mb: int,
+) -> Optional[dict[str, Any]]:
+    """
+    Per-node load from Nomad /v1/client/allocation/:id/stats only (running allocs).
+    Avoids duplicated host-level /v1/client/stats when many clients share one kernel.
+    """
+    try:
+        allocs = await nomad.get_node_allocations(node_id)
+    except Exception:
         return None
-
-    out: dict[str, Any] = {
+    running = [a["ID"] for a in allocs if a.get("ClientStatus") == "running" and a.get("ID")]
+    if not running:
+        return {
+            "load_percent": 0.0,
+            "cpu_percent": 0.0,
+            "memory_percent": 0.0,
+            "metrics_source": "allocations",
+        }
+    stats_list = await asyncio.gather(
+        *[nomad.get_allocation_stats(aid) for aid in running],
+        return_exceptions=True,
+    )
+    cpu_parts: list[float] = []
+    rss_total = 0
+    for st in stats_list:
+        if isinstance(st, Exception) or not st:
+            continue
+        cp = _cpu_percent_from_single_alloc_stats(st)
+        if cp is not None:
+            cpu_parts.append(cp)
+        rss_total += _memory_rss_bytes_from_alloc_stats(st)
+    cpu_avg = sum(cpu_parts) / len(cpu_parts) if cpu_parts else 0.0
+    mem_pct = 0.0
+    if memory_mb > 0:
+        cap = float(memory_mb) * 1024.0 * 1024.0
+        mem_pct = min(100.0, 100.0 * float(rss_total) / cap)
+    load_pct = (cpu_avg + mem_pct) / 2.0
+    return {
         "load_percent": round(load_pct, 1),
+        "cpu_percent": round(cpu_avg, 1),
+        "memory_percent": round(mem_pct, 1),
+        "metrics_source": "allocations",
     }
-    if cpu_pct is not None:
-        out["cpu_percent"] = round(cpu_pct, 1)
-    if mem_pct is not None:
-        out["memory_percent"] = round(mem_pct, 1)
-    return out
 
 
 @router.get("/nodes")
 async def list_nodes(
     request: Request,
-    include_stats: Optional[str] = Query(None, description="Include per-node load_snapshot from Nomad client stats"),
+    include_stats: Optional[str] = Query(
+        None,
+        description="Include per-node load_snapshot from Nomad allocation stats (workload CPU + RSS vs node RAM)",
+    ),
 ):
     """
     List all nodes in the cluster with their status and resources.
-    
-    Returns each node's:
-    - Identity (ID, name, company, datacenter)
-    - Status (ready, down, initializing)
-    - Resources (CPU, memory, disk, GPU)
-    - Running allocation count
+
+    With include_stats=true, load_snapshot uses Nomad allocation stats only
+    (running tasks): CPU from CpuStats.Percent, memory from RSS vs node memory_mb.
+    Non-ready nodes get load_snapshot=null.
     """
     nomad = request.app.state.nomad
     want_stats = _parse_bool_query(include_stats, default=False)
@@ -219,17 +256,21 @@ async def list_nodes(
         if want_stats:
             snapshot_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
-            async def _fetch_stats(nid: str):
-                try:
-                    return await nomad.get_node_stats(nid.strip())
-                except Exception:
-                    return None
+            ready_indices = [i for i, n in enumerate(nodes) if n.get("status") == "ready"]
+            for i in range(len(nodes)):
+                if i not in ready_indices:
+                    nodes[i]["load_snapshot"] = None
 
-            raw_stats_list = await asyncio.gather(
-                *(_fetch_stats(n["id"]) for n in nodes)
-            )
-            for i, raw in enumerate(raw_stats_list):
-                nodes[i]["load_snapshot"] = _summarize_nomad_client_stats(raw)
+            async def _fetch_workload(i: int):
+                nid = nodes[i]["id"].strip()
+                mb = int(nodes[i]["resources"].get("memory_mb") or 0)
+                snap = await _workload_snapshot_from_allocations(nomad, nid, mb)
+                return i, snap
+
+            if ready_indices:
+                workload_results = await asyncio.gather(*[_fetch_workload(i) for i in ready_indices])
+                for i, snap in workload_results:
+                    nodes[i]["load_snapshot"] = snap
 
             payload["snapshot_at"] = snapshot_at
 

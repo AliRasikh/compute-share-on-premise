@@ -22,6 +22,8 @@ type LoadSnapshot = {
   load_percent: number;
   cpu_percent?: number;
   memory_percent?: number;
+  /** Nomad allocation stats (not client/stats) */
+  metrics_source?: string;
 };
 
 type ClusterNode = {
