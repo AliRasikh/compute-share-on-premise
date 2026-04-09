@@ -186,7 +186,7 @@ function ServerStatsCard({ server }: { server: ServerNode }) {
   const stateStyles =
     server.state === "running"
       ? {
-        badge: "border-slate-200 bg-slate-50 text-slate-700",
+        badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
       }
       : server.state === "warning"
         ? {
@@ -258,6 +258,12 @@ function ServerCard({ server }: { server: ServerNode }) {
 }
 
 export default function AdminDashboardPage() {
+  const [hiddenDatasets, setHiddenDatasets] = useState<Record<number, boolean>>({});
+
+  const toggleDataset = (index: number) => {
+    setHiddenDatasets((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
   const totalCapacity = useMemo(
     () => SERVERS.reduce((sum, server) => sum + server.capacity, 0),
     [],
@@ -299,8 +305,9 @@ export default function AdminDashboardPage() {
         {
           label: "Aster Labs",
           data: SERVERS[0].demandSeries,
-          borderColor: "#0f172a",
-          backgroundColor: "rgba(15, 23, 42, 0.05)",
+          hidden: hiddenDatasets[0] ?? false,
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37, 99, 235, 0.05)",
           fill: true,
           tension: 0.35,
           borderWidth: 2,
@@ -309,7 +316,8 @@ export default function AdminDashboardPage() {
         {
           label: "Nova Systems",
           data: SERVERS[1].demandSeries,
-          borderColor: "#475569",
+          hidden: hiddenDatasets[1] ?? false,
+          borderColor: "#d97706",
           backgroundColor: "transparent",
           fill: false,
           tension: 0.35,
@@ -319,7 +327,8 @@ export default function AdminDashboardPage() {
         {
           label: "Helix Compute",
           data: SERVERS[2].demandSeries,
-          borderColor: "#94a3b8",
+          hidden: hiddenDatasets[2] ?? false,
+          borderColor: "#16a34a",
           backgroundColor: "transparent",
           fill: false,
           tension: 0.35,
@@ -329,7 +338,8 @@ export default function AdminDashboardPage() {
         {
           label: "Vertex Ops",
           data: SERVERS[3].demandSeries,
-          borderColor: "#cbd5e1",
+          hidden: hiddenDatasets[3] ?? false,
+          borderColor: "#dc2626",
           backgroundColor: "transparent",
           fill: false,
           tension: 0.35,
@@ -338,7 +348,7 @@ export default function AdminDashboardPage() {
         },
       ],
     }),
-    [],
+    [hiddenDatasets],
   );
 
   const demandLineOptions = useMemo<ChartOptions<"line">>(
@@ -348,8 +358,7 @@ export default function AdminDashboardPage() {
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: {
-          position: "top",
-          labels: { color: "#334155", boxWidth: 10, boxHeight: 10 },
+          display: false,
         },
       },
       scales: {
@@ -461,10 +470,40 @@ export default function AdminDashboardPage() {
           </section>
 
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-2 items-stretch">
-            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <article className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <p className="text-base font-semibold text-slate-900">Demand Trends (24h)</p>
               <p className="text-xs text-slate-500">Demand curves for each server/company.</p>
-              <div className="mt-4 h-72 rounded-xl border border-slate-200 bg-white p-3">
+              
+              <div className="mt-4 flex flex-wrap items-center gap-4">
+                {demandLineData.datasets.map((ds, idx) => {
+                  const isHidden = hiddenDatasets[idx] ?? false;
+                  return (
+                    <button
+                      key={ds.label}
+                      onClick={() => toggleDataset(idx)}
+                      className="flex items-center gap-2 text-xs sm:text-sm font-medium transition-colors"
+                      style={{ color: isHidden ? "#94a3b8" : "#334155" }}
+                    >
+                      <div 
+                        className="flex h-3.5 w-3.5 items-center justify-center rounded-[3px] border transition-colors"
+                        style={{ 
+                          backgroundColor: isHidden ? "transparent" : ds.borderColor as string,
+                          borderColor: ds.borderColor as string,
+                        }}
+                      >
+                        {!isHidden && (
+                          <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      {ds.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex-1 min-h-[16rem] rounded-xl border border-slate-200 bg-white p-3">
                 <Line data={demandLineData} options={demandLineOptions} />
               </div>
             </article>
