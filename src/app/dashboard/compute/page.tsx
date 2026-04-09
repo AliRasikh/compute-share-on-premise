@@ -283,6 +283,12 @@ export default function ComputePage() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
+  // Filter state
+  const [filterCpuMin, setFilterCpuMin] = useState(0);
+  const [filterRamMin, setFilterRamMin] = useState(0);
+  const [filterRegions, setFilterRegions] = useState<Set<string>>(new Set());
+  const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
+
   // Deploy modal state
   const [deployNode, setDeployNode] = useState<ClusterNode | null>(null);
   const [selectedPreset, setSelectedPreset] = useState(PRESETS[0]);
@@ -475,19 +481,63 @@ export default function ComputePage() {
     return "text-amber-400";
   };
 
-  const readyNodes = nodes.filter((n) => n.status === "ready");
+  // ── Derived: unique datacenters from live data ────────────────────────────
+  const allDatacenters = Array.from(new Set(nodes.map((n) => n.datacenter))).filter(Boolean).sort();
+
+  // ── Filtering ─────────────────────────────────────────────────────────────
+  const filteredNodes = nodes.filter((n) => {
+    const cores = parseInt(n.resources.cpu_cores || n.meta?.cpu_cores || "0", 10);
+    const ramGb = n.resources.memory_mb / 1024;
+
+    if (cores < filterCpuMin) return false;
+    if (ramGb < filterRamMin) return false;
+    if (filterOnlineOnly && n.status !== "ready") return false;
+    if (filterRegions.size > 0 && !filterRegions.has(n.datacenter)) return false;
+
+    return true;
+  });
+
+  const readyCount = filteredNodes.filter((n) => n.status === "ready").length;
+
+  const toggleRegion = (dc: string) => {
+    setFilterRegions((prev) => {
+      const next = new Set(prev);
+      if (next.has(dc)) next.delete(dc);
+      else next.add(dc);
+      return next;
+    });
+  };
+
+  const resetFilters = () => {
+    setFilterCpuMin(0);
+    setFilterRamMin(0);
+    setFilterRegions(new Set());
+    setFilterOnlineOnly(false);
+  };
+
+  const hasActiveFilters =
+    filterCpuMin > 0 || filterRamMin > 0 || filterRegions.size > 0 || filterOnlineOnly;
 
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
+      {/* ── Custom range slider styles ── */}
+      <style>{`
+        .filter-range { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 9999px; background: #e2e8f0; outline: none; cursor: pointer; }
+        .filter-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #2563eb; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,.2); cursor: pointer; transition: transform 0.15s; }
+        .filter-range::-webkit-slider-thumb:hover { transform: scale(1.15); }
+        .filter-range::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #2563eb; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,.2); cursor: pointer; }
+        .filter-range::-moz-range-track { height: 6px; border-radius: 9999px; background: #e2e8f0; }
+      `}</style>
+
       <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Header */}
         <div className="flex flex-wrap justify-between items-end gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">Compute</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">Available Capacity</h2>
             <p className="mt-2 text-slate-500 text-lg">
-              Showing {readyNodes.length} nodes available for deployment
+              Showing {readyCount} of {nodes.length} nodes matching your criteria
             </p>
           </div>
           <button
@@ -541,98 +591,231 @@ export default function ComputePage() {
           </div>
         )}
 
-        {/* ── Marketplace Grid ──────────────────────────────────────────── */}
-        {nodes.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {nodes.map((node) => {
-              const isReady = node.status === "ready";
-              const cpuCores = node.resources.cpu_cores || node.meta?.cpu_cores || "–";
-              const memMb = node.resources.memory_mb;
-              const diskMb = node.resources.disk_mb;
-              const hourlyRate = calcHourlyRate(node);
-              const osLabel = node.os && node.os_version
-                ? `${node.os} ${node.os_version}`
-                : node.os || "–";
+        {/* ── Sidebar + Grid Layout ────────────────────────────────────── */}
+        <div className="flex gap-6">
+          {/* ── Filter Sidebar ──────────────────────────────────────────── */}
+          <aside className="hidden lg:flex flex-col gap-6 w-[280px] shrink-0 sticky top-[90px] self-start">
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+              {/* Sidebar Header */}
+              <div className="px-5 py-4 border-b border-slate-100">
+                <h3 className="font-bold text-lg text-slate-900">Filters</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Narrow down compute options</p>
+              </div>
 
-              return (
-                <article
-                  key={node.id}
-                  className={`bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col ${
-                    isReady
-                      ? "border-slate-200 hover:border-blue-400"
-                      : "border-slate-200 opacity-60"
-                  }`}
-                >
-                  {/* Top: name + status */}
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-bold text-lg text-slate-900">{node.name}</h3>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
-                        <span className="material-symbols-outlined text-[14px]">location_on</span>
-                        {node.datacenter} • {node.company !== "unknown" ? node.company : "–"}
-                      </div>
+              <div className="p-5 flex flex-col gap-6">
+                {/* vCPU Cores */}
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm font-semibold text-slate-800">Min vCPU Cores</span>
+                    <span className="text-xs font-mono text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                      {filterCpuMin === 0 ? "Any" : `${filterCpuMin}+`}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {[0, 4, 8, 16, 32].map((val) => (
+                      <button
+                        key={val}
+                        onClick={() => setFilterCpuMin(val)}
+                        className={`py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                          filterCpuMin === val
+                            ? "bg-blue-100 text-blue-700 border border-blue-200"
+                            : "bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        {val === 0 ? "Any" : `${val}+`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-slate-100" />
+
+                {/* RAM */}
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm font-semibold text-slate-800">Min RAM (GB)</span>
+                    <span className="text-xs font-mono text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                      {filterRamMin === 0 ? "Any" : `${filterRamMin}+`}
+                    </span>
+                  </div>
+                  <input type="range" min={0} max={64} step={2} value={filterRamMin}
+                    onChange={(e) => setFilterRamMin(Number(e.target.value))}
+                    className="filter-range" 
+                    style={{ background: `linear-gradient(to right, #2563eb ${(filterRamMin / 64) * 100}%, #e2e8f0 ${(filterRamMin / 64) * 100}%)` }}
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                    <span>0 GB</span><span>64 GB</span>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-slate-100" />
+
+                {/* Region */}
+                {allDatacenters.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 mb-3">Region</p>
+                    <div className="flex flex-col gap-2">
+                      {allDatacenters.map((dc) => (
+                        <label key={dc} className="flex items-center gap-2.5 cursor-pointer group">
+                          <span
+                            onClick={() => toggleRegion(dc)}
+                            className={`w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all duration-150 ${
+                              filterRegions.has(dc)
+                                ? "bg-blue-600 border-blue-600"
+                                : "border-slate-300 group-hover:border-blue-400"
+                            }`}
+                          >
+                            {filterRegions.has(dc) && (
+                              <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            )}
+                          </span>
+                          <span className="text-sm text-slate-700">{dc}</span>
+                        </label>
+                      ))}
                     </div>
-                    <div
-                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${
+                  </div>
+                )}
+
+                {/* Divider */}
+                <div className="border-t border-slate-100" />
+
+                {/* Status toggle */}
+                <label className="flex items-center gap-2.5 cursor-pointer group">
+                  <span
+                    onClick={() => setFilterOnlineOnly((v) => !v)}
+                    className={`w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all duration-150 ${
+                      filterOnlineOnly
+                        ? "bg-blue-600 border-blue-600"
+                        : "border-slate-300 group-hover:border-blue-400"
+                    }`}
+                  >
+                    {filterOnlineOnly && (
+                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    )}
+                  </span>
+                  <span className="text-sm text-slate-700">Online only</span>
+                </label>
+              </div>
+
+              {/* Reset */}
+              {hasActiveFilters && (
+                <div className="px-5 pb-5">
+                  <button onClick={resetFilters}
+                    className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>restart_alt</span>
+                    Reset Filters
+                  </button>
+                </div>
+              )}
+            </div>
+          </aside>
+
+          {/* ── Right: Grid ────────────────────────────────────────────── */}
+          <div className="flex-1 min-w-0">
+            {/* No results */}
+            {!loading && filteredNodes.length === 0 && nodes.length > 0 && (
+              <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+                <span className="material-symbols-outlined text-slate-300" style={{ fontSize: "56px" }}>filter_list_off</span>
+                <h3 className="text-xl font-bold text-slate-700">No nodes match your filters</h3>
+                <p className="text-slate-500 max-w-md">Try adjusting the slider ranges or deselecting region filters.</p>
+                <button onClick={resetFilters}
+                  className="mt-2 flex items-center gap-1.5 h-9 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>restart_alt</span>
+                  Reset Filters
+                </button>
+              </div>
+            )}
+
+            {filteredNodes.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
+                {filteredNodes.map((node) => {
+                  const isReady = node.status === "ready";
+                  const cpuCores = node.resources.cpu_cores || node.meta?.cpu_cores || "–";
+                  const memMb = node.resources.memory_mb;
+                  const diskMb = node.resources.disk_mb;
+                  const hourlyRate = calcHourlyRate(node);
+                  const osLabel = node.os && node.os_version
+                    ? `${node.os} ${node.os_version}`
+                    : node.os || "–";
+
+                  return (
+                    <article
+                      key={node.id}
+                      className={`bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col ${
                         isReady
-                          ? "bg-blue-50 text-blue-600 border-blue-100"
-                          : "bg-red-50 text-red-500 border-red-100"
+                          ? "border-slate-200 hover:border-blue-400"
+                          : "border-slate-200 opacity-60"
                       }`}
                     >
-                      <span className={`w-1.5 h-1.5 rounded-full ${isReady ? "bg-blue-500 animate-pulse" : "bg-red-400"}`} />
-                      {isReady ? "Online" : node.status}
-                    </div>
-                  </div>
-
-                  {/* Spec grid */}
-                  <div className="grid grid-cols-2 gap-3 mb-6 mt-1">
-                    <div className="bg-slate-50 p-3 rounded-lg">
-                      <div className="text-xs text-slate-500 mb-1 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px]">memory</span> vCPU
-                      </div>
-                      <div className="font-bold text-lg text-slate-900">{cpuCores} Cores</div>
-                    </div>
-                    <div className="bg-slate-50 p-3 rounded-lg">
-                      <div className="text-xs text-slate-500 mb-1 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px]">developer_board</span> RAM
-                      </div>
-                      <div className="font-bold text-lg text-slate-900">{formatMemory(memMb)}</div>
-                    </div>
-                    <div className="bg-slate-50 p-3 rounded-lg col-span-2 flex justify-between items-center">
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1 flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px]">storage</span> Storage
+                      {/* Top: name + status */}
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-bold text-lg text-slate-900">{node.name}</h3>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+                            <span className="material-symbols-outlined text-[14px]">location_on</span>
+                            {node.datacenter} • {node.company !== "unknown" ? node.company : "–"}
+                          </div>
                         </div>
-                        <div className="font-semibold text-sm text-slate-900">{formatDisk(diskMb)}</div>
+                        <div
+                          className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${
+                            isReady
+                              ? "bg-blue-50 text-blue-600 border-blue-100"
+                              : "bg-red-50 text-red-500 border-red-100"
+                          }`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${isReady ? "bg-blue-500 animate-pulse" : "bg-red-400"}`} />
+                          {isReady ? "Online" : node.status}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs text-slate-500 mb-1">OS</div>
-                        <div className="font-semibold text-sm text-slate-900 truncate max-w-[120px]">{osLabel}</div>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Bottom: price + deploy */}
-                  <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <div>
-                      <div className="text-xs text-slate-500">Hourly Rate</div>
-                      <div className="text-xl font-bold text-slate-900">
-                        ${hourlyRate}<span className="text-sm font-normal text-slate-500">/hr</span>
+                      {/* Spec grid */}
+                      <div className="grid grid-cols-2 gap-3 mb-6 mt-1">
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs text-slate-500 mb-1 flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[14px]">memory</span> vCPU
+                          </div>
+                          <div className="font-bold text-lg text-slate-900">{cpuCores} Cores</div>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-lg">
+                          <div className="text-xs text-slate-500 mb-1 flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[14px]">developer_board</span> RAM
+                          </div>
+                          <div className="font-bold text-lg text-slate-900">{formatMemory(memMb)}</div>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-lg col-span-2 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[14px] text-slate-500">terminal</span>
+                          <div className="text-xs text-slate-500">OS</div>
+                          <div className="font-semibold text-sm text-slate-900 ml-auto truncate">{osLabel}</div>
+                        </div>
                       </div>
-                    </div>
-                    <button
-                      onClick={() => isReady && openDeployModal(node)}
-                      disabled={!isReady}
-                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-2 px-5 rounded-lg transition shadow-sm text-sm"
-                    >
-                      Deploy
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
+
+                      {/* Bottom: price + deploy */}
+                      <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                        <div>
+                          <div className="text-xs text-slate-500">Hourly Rate</div>
+                          <div className="text-xl font-bold text-slate-900">
+                            ${hourlyRate}<span className="text-sm font-normal text-slate-500">/hr</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => isReady && openDeployModal(node)}
+                          disabled={!isReady}
+                          className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-2 px-5 rounded-lg transition shadow-sm text-sm"
+                        >
+                          Deploy
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════
