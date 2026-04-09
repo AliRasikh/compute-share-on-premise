@@ -685,39 +685,40 @@ export default function ComputePage() {
                 {/* Divider */}
                 <div className="border-t border-slate-100" />
 
-                {/* Status toggle */}
-                <label className="flex items-center gap-2.5 cursor-pointer group">
-                  <span
-                    onClick={() => setFilterOnlineOnly((v) => !v)}
-                    className={`w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all duration-150 ${
-                      filterOnlineOnly
-                        ? "bg-blue-600 border-blue-600"
-                        : "border-slate-300 group-hover:border-blue-400"
-                    }`}
-                  >
-                    {filterOnlineOnly && (
-                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    )}
-                  </span>
-                  <span className="text-sm text-slate-700">Online only</span>
-                </label>
+                {/* Status Toggles */}
+                <div className="flex flex-col gap-3">
+                  <label className="flex items-center gap-2.5 cursor-pointer group">
+                    <span
+                      onClick={() => setFilterOnlineOnly((v) => !v)}
+                      className={`w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all duration-150 ${
+                        filterOnlineOnly
+                          ? "bg-blue-600 border-blue-600"
+                          : "border-slate-300 group-hover:border-blue-400"
+                      }`}
+                    >
+                      {filterOnlineOnly && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      )}
+                    </span>
+                    <span className="text-sm text-slate-700">Online only</span>
+                  </label>
 
-                {/* Secure toggle */}
-                <label className="flex items-center gap-2.5 cursor-pointer group mt-2">
-                  <span
-                    onClick={() => setFilterSecureOnly((v) => !v)}
-                    className={`w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all duration-150 ${
-                      filterSecureOnly
-                        ? "bg-blue-600 border-blue-600"
-                        : "border-slate-300 group-hover:border-blue-400"
-                    }`}
-                  >
-                    {filterSecureOnly && (
-                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    )}
-                  </span>
-                  <span className="text-sm text-slate-700">Secure only</span>
-                </label>
+                  <label className="flex items-center gap-2.5 cursor-pointer group">
+                    <span
+                      onClick={() => setFilterSecureOnly((v) => !v)}
+                      className={`w-[18px] h-[18px] rounded border-2 flex items-center justify-center transition-all duration-150 ${
+                        filterSecureOnly
+                          ? "bg-blue-600 border-blue-600"
+                          : "border-slate-300 group-hover:border-blue-400"
+                      }`}
+                    >
+                      {filterSecureOnly && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      )}
+                    </span>
+                    <span className="text-sm text-slate-700">Secure only</span>
+                  </label>
+                </div>
               </div>
 
               {/* Reset */}
@@ -785,13 +786,12 @@ export default function ComputePage() {
                         {/* Top right badges */}
                         <div className="flex gap-2 shrink-0">
                           {isSecure && (
-                            <div className="flex items-center gap-1 bg-green-50 px-2 py-1 rounded-md text-green-700 group/badge cursor-default relative">
+                            <div className="flex items-center justify-center w-6 h-6 bg-green-50 rounded-md text-green-700 group/badge cursor-default relative">
                               <span className="material-symbols-outlined text-[14px]">lock</span>
-                              <span className="text-xs font-semibold">Secure</span>
                               {/* Tooltip */}
                               <div className="absolute bottom-full right-0 mb-2 w-max max-w-[200px] px-3 py-2 bg-slate-900 text-white text-[11px] leading-tight rounded-lg opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all whitespace-normal z-10 shadow-lg">
-                                This is a secure only server
-                                <svg className="absolute top-full right-4 text-slate-900 h-2 w-4" x="0px" y="0px" viewBox="0 0 255 255"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                                This is a secure server
+                                <svg className="absolute top-full right-2 text-slate-900 h-2 w-4" x="0px" y="0px" viewBox="0 0 255 255"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
                               </div>
                             </div>
                           )}

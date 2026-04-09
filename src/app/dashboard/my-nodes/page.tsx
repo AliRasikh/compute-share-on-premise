@@ -313,13 +313,12 @@ export default function MyNodesPage() {
                       <div className="flex flex-col items-end gap-1">
                         <div className="flex items-center gap-1.5">
                           {isSecure && (
-                            <div className="flex items-center gap-1 bg-green-50 px-2 py-0.5 rounded-full text-green-700 group/badge cursor-default relative">
+                            <div className="flex items-center justify-center w-6 h-6 bg-green-50 rounded-full text-green-700 group/badge cursor-default relative">
                               <span className="material-symbols-outlined text-[12px]">lock</span>
-                              <span className="text-[10px] font-bold uppercase tracking-wider">Secure</span>
                               {/* Tooltip */}
                               <div className="absolute bottom-full right-0 mb-2 w-max max-w-[200px] px-3 py-2 bg-slate-900 text-white text-[11px] leading-tight rounded-lg opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all whitespace-normal z-10 shadow-lg">
-                                This is a secure only server
-                                <svg className="absolute top-full right-4 text-slate-900 h-2 w-4" x="0px" y="0px" viewBox="0 0 255 255"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                                This is a secure server
+                                <svg className="absolute top-full right-2 text-slate-900 h-2 w-4" x="0px" y="0px" viewBox="0 0 255 255"><polygon className="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
                               </div>
                             </div>
                           )}
