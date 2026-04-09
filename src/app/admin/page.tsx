@@ -139,24 +139,6 @@ const ACTIVITIES = [
   "Global scheduler rebalanced workload across 4 servers",
 ];
 
-function KpiCard({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-}) {
-  return (
-    <article className="group rounded-2xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/70 p-4 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-lg">
-      <p className="text-xs font-medium text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{value}</p>
-      <p className="mt-1 text-xs text-slate-500">{sub}</p>
-    </article>
-  );
-}
-
 function ResourceBalanceRow({
   label,
   shared,
@@ -178,9 +160,8 @@ function ResourceBalanceRow({
     <div className="grid grid-cols-[2.5rem_2.25rem_1fr_2.25rem] items-center gap-2 sm:grid-cols-[2.75rem_2.75rem_1fr_2.75rem]">
       <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</span>
       <span
-        className={`text-right text-xs font-mono tabular-nums ${
-          borrowed > 0 ? "text-rose-300/95" : "text-slate-600"
-        }`}
+        className={`text-right text-xs font-mono tabular-nums ${borrowed > 0 ? "text-rose-300/95" : "text-slate-600"
+          }`}
       >
         {borrowed > 0 ? borrowed : "—"}
       </span>
@@ -222,9 +203,8 @@ function ResourceBalanceRow({
       </div>
 
       <span
-        className={`text-left text-xs font-mono tabular-nums ${
-          shared > 0 ? "text-emerald-300/95" : "text-slate-600"
-        }`}
+        className={`text-left text-xs font-mono tabular-nums ${shared > 0 ? "text-emerald-300/95" : "text-slate-600"
+          }`}
       >
         {shared > 0 ? shared : "—"}
       </span>
@@ -249,31 +229,30 @@ function ResourceBalanceServerCard({ server }: { server: ServerNode }) {
   const stateStyles =
     server.state === "running"
       ? {
-          dot: "bg-emerald-400",
-          ring: "bg-emerald-400/50",
-          badge: "border-emerald-400/40 bg-emerald-500/15 text-emerald-200",
-        }
+        dot: "bg-emerald-400",
+        ring: "bg-emerald-400/50",
+        badge: "border-emerald-400/40 bg-emerald-500/15 text-emerald-200",
+      }
       : server.state === "warning"
         ? {
-            dot: "bg-amber-400",
-            ring: "bg-amber-400/45",
-            badge: "border-amber-400/40 bg-amber-500/15 text-amber-200",
-          }
+          dot: "bg-amber-400",
+          ring: "bg-amber-400/45",
+          badge: "border-amber-400/40 bg-amber-500/15 text-amber-200",
+        }
         : {
-            dot: "bg-rose-400",
-            ring: "bg-rose-400/45",
-            badge: "border-rose-400/40 bg-rose-500/15 text-rose-200",
-          };
+          dot: "bg-rose-400",
+          ring: "bg-rose-400/45",
+          badge: "border-rose-400/40 bg-rose-500/15 text-rose-200",
+        };
 
   const statusLabel = server.state === "down" ? "Unreachable" : server.state;
 
   return (
     <article
-      className={`group relative overflow-visible rounded-2xl border bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 p-4 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.45)] ring-1 transition duration-300 hover:-translate-y-1 ${
-        isUnreachable
-          ? "border-rose-500/25 ring-rose-500/10 hover:shadow-[0_24px_60px_-10px_rgba(244,63,94,0.12)]"
-          : "border-white/10 ring-white/5 hover:shadow-[0_24px_60px_-10px_rgba(59,130,246,0.15)]"
-      }`}
+      className={`group relative overflow-visible rounded-2xl border bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 p-4 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.45)] ring-1 transition duration-300 hover:-translate-y-1 ${isUnreachable
+        ? "border-rose-500/25 ring-rose-500/10 hover:shadow-[0_24px_60px_-10px_rgba(244,63,94,0.12)]"
+        : "border-white/10 ring-white/5 hover:shadow-[0_24px_60px_-10px_rgba(59,130,246,0.15)]"
+        }`}
     >
       <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-blue-500/15 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-emerald-500/10 blur-2xl" />
@@ -531,155 +510,156 @@ export default function AdminDashboardPage() {
         headerTitle="Corimb Dashboard"
       >
         <div className="space-y-6 p-4 md:p-6 xl:p-8">
-            <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-              <KpiCard label="Total compute available" value={`${totalCapacity} vCPU`} sub="Across 4 company servers" />
-              <KpiCard label="Compute allocated/shared" value={`${totalShared} vCPU`} sub="Exported into shared pool" />
-              <KpiCard label="Borrowed compute demand" value={`${totalBorrowed} vCPU`} sub="Imported from shared pool" />
-              <KpiCard label="Avg throughput" value={`${avgSpeed.toFixed(1)} GHz`} sub="Processing speed per server" />
-              <KpiCard label="Active companies" value={`${SERVERS.length}`} sub="Each company has 1 server unit" />
-              <KpiCard
-                label="Running vs unreachable"
-                value={`${runningCount} / ${downCount}`}
-                sub={`${warningCount} server in warning state`}
-              />
-            </section>
-
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.45fr_0.9fr]">
-              <article className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-5 shadow-sm sm:p-6">
-                <div className="absolute -left-16 -top-16 h-40 w-40 rounded-full bg-blue-200/30 blur-3xl" />
-                <div className="absolute -bottom-20 right-0 h-48 w-48 rounded-full bg-indigo-200/30 blur-3xl" />
-                <div className="relative flex items-center justify-between">
-                  <h2 className="section-title">
-                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-600" />
-                    Shared Compute Cluster (4 Servers)
-                  </h2>
-                  <span className="chip">Orchestrated pool</span>
+          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-sm font-semibold text-slate-900">Compute Overview</p>
+              <div className="mt-3 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                  <span>Total compute available: <span className="font-semibold text-slate-900">{totalCapacity} vCPU</span></span>
+                  <span className="mt-1 text-xs text-slate-500 sm:mt-0">Across {SERVERS.length} servers</span>
                 </div>
-                <p className="relative mt-2 text-sm text-slate-600">
-                  Each company contributes exactly one server node. Compute is dynamically shared by platform orchestration.
-                </p>
-
-                <div className="relative mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  {SERVERS.map((server) => (
-                    <ServerCard key={server.id} server={server} />
-                  ))}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                  <span>Compute allocated/shared: <span className="font-semibold text-slate-900">{totalShared} vCPU</span></span>
+                  <span className="mt-1 text-xs text-slate-500 sm:mt-0">Exported into shared pool</span>
                 </div>
-              </article>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                  <span>Borrowed compute demand: <span className="font-semibold text-slate-900">{totalBorrowed} vCPU</span></span>
+                  <span className="mt-1 text-xs text-slate-500 sm:mt-0">Imported from shared pool</span>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                  <span>Avg throughput: <span className="font-semibold text-slate-900">{avgSpeed.toFixed(1)} GHz</span></span>
+                  <span className="mt-1 text-xs text-slate-500 sm:mt-0">Processing speed</span>
+                </div>
+              </div>
+            </article>
 
-              <article className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <p className="text-sm font-semibold text-slate-900">Infrastructure Runtime Health</p>
-                  <div className="mt-3 space-y-3">
-                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-                      Running servers: <span className="font-semibold">{runningCount}</span>
-                    </div>
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                      Warning state: <span className="font-semibold">{warningCount}</span>
-                    </div>
-                    <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
-                      Unreachable servers: <span className="font-semibold">{downCount}</span>
-                    </div>
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                      Avg uptime: <span className="font-semibold text-slate-900">{avgUptime.toFixed(2)}%</span>
-                    </div>
+            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-sm font-semibold text-slate-900">Infrastructure Health</p>
+              <div className="mt-3 space-y-3">
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                  Running servers: <span className="font-semibold">{runningCount}</span>
+                </div>
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                  Warning state: <span className="font-semibold">{warningCount}</span>
+                </div>
+                <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+                  Unreachable servers: <span className="font-semibold">{downCount}</span>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                  Avg uptime: <span className="font-semibold text-slate-900">{avgUptime.toFixed(2)}%</span>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <section className="grid grid-cols-1 gap-6">
+            <article className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-5 shadow-sm sm:p-6">
+              <div className="absolute -left-16 -top-16 h-40 w-40 rounded-full bg-blue-200/30 blur-3xl" />
+              <div className="absolute -bottom-20 right-0 h-48 w-48 rounded-full bg-indigo-200/30 blur-3xl" />
+              <div className="relative flex items-center justify-between">
+                <h2 className="section-title">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-600" />
+                  Shared Compute Cluster (4 Servers)
+                </h2>
+                <span className="chip">Orchestrated pool</span>
+              </div>
+              <p className="relative mt-2 text-sm text-slate-600">
+                Each company contributes exactly one server node. Compute is dynamically shared by platform orchestration.
+              </p>
+
+              <div className="relative mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-4">
+                {SERVERS.map((server) => (
+                  <ServerCard key={server.id} server={server} />
+                ))}
+              </div>
+            </article>
+          </section>
+
+          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <p className="text-base font-semibold text-slate-900">Demand Trends (24h)</p>
+              <p className="text-xs text-slate-500">Demand curves for each server/company.</p>
+              <div className="mt-4 h-72 rounded-xl border border-slate-200 bg-white p-3">
+                <Line data={demandLineData} options={demandLineOptions} />
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <p className="text-base font-semibold text-slate-900">Peak vs Low Demand by Server</p>
+              <p className="text-xs text-slate-500">Comparison of demand extremes for all 4 servers.</p>
+              <div className="mt-4 h-72 rounded-xl border border-slate-200 bg-white p-3">
+                <Bar data={demandBarData} options={demandBarOptions} />
+              </div>
+            </article>
+          </section>
+
+          <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1.15fr]">
+            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <p className="text-base font-semibold text-slate-900">Compute Resource Statistics</p>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <div className="mb-1 flex justify-between text-xs text-slate-600">
+                    <span>Total CPU utilization</span>
+                    <span>{cpuUtil}%</span>
                   </div>
-                </div>
-
-                <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
-                  <p className="text-sm font-semibold text-rose-800">Active incident</p>
-                  <p className="mt-2 text-sm text-rose-700">
-                    Vertex Ops is unreachable — no compute flow; demand is rerouted to Aster and Helix.
-                  </p>
-                </div>
-              </article>
-            </section>
-
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-              <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                <p className="text-base font-semibold text-slate-900">Demand Trends (24h)</p>
-                <p className="text-xs text-slate-500">Demand curves for each server/company.</p>
-                <div className="mt-4 h-72 rounded-xl border border-slate-200 bg-white p-3">
-                  <Line data={demandLineData} options={demandLineOptions} />
-                </div>
-              </article>
-
-              <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                <p className="text-base font-semibold text-slate-900">Peak vs Low Demand by Server</p>
-                <p className="text-xs text-slate-500">Comparison of demand extremes for all 4 servers.</p>
-                <div className="mt-4 h-72 rounded-xl border border-slate-200 bg-white p-3">
-                  <Bar data={demandBarData} options={demandBarOptions} />
-                </div>
-              </article>
-            </section>
-
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1.15fr]">
-              <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                <p className="text-base font-semibold text-slate-900">Compute Resource Statistics</p>
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <div className="mb-1 flex justify-between text-xs text-slate-600">
-                      <span>Total CPU utilization</span>
-                      <span>{cpuUtil}%</span>
-                    </div>
-                    <div className="h-2.5 rounded-full bg-slate-100">
-                      <div
-                        className="h-2.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-500"
-                        style={{ width: `${cpuUtil}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="mb-1 flex justify-between text-xs text-slate-600">
-                      <span>Average RAM usage</span>
-                      <span>{avgRam}%</span>
-                    </div>
-                    <div className="h-2.5 rounded-full bg-slate-100">
-                      <div
-                        className="h-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
-                        style={{ width: `${avgRam}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      Network throughput
-                      <p className="mt-1 text-lg font-semibold text-slate-900">
-                        {networkThroughput.toFixed(1)} Gbps
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      Avg latency
-                      <p className="mt-1 text-lg font-semibold text-slate-900">
-                        {avgLatency.toFixed(1)} ms
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </article>
-
-              <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                <p className="text-base font-semibold text-slate-900">Recent Activity Feed</p>
-                <div className="mt-4 space-y-2">
-                  {ACTIVITIES.map((item, idx) => (
+                  <div className="h-2.5 rounded-full bg-slate-100">
                     <div
-                      key={item}
-                      className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 transition hover:border-blue-200 hover:bg-blue-50/60"
-                    >
-                      <span
-                        className={`mt-1 inline-flex h-2.5 w-2.5 rounded-full ${
-                          idx === 2
-                            ? "bg-rose-500"
-                            : idx === 1
-                              ? "bg-amber-500"
-                              : "bg-emerald-500"
-                        }`}
-                      />
-                      <p className="text-sm text-slate-700">{item}</p>
-                    </div>
-                  ))}
+                      className="h-2.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-500"
+                      style={{ width: `${cpuUtil}%` }}
+                    />
+                  </div>
                 </div>
-              </article>
-            </section>
+                <div>
+                  <div className="mb-1 flex justify-between text-xs text-slate-600">
+                    <span>Average RAM usage</span>
+                    <span>{avgRam}%</span>
+                  </div>
+                  <div className="h-2.5 rounded-full bg-slate-100">
+                    <div
+                      className="h-2.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                      style={{ width: `${avgRam}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    Network throughput
+                    <p className="mt-1 text-lg font-semibold text-slate-900">
+                      {networkThroughput.toFixed(1)} Gbps
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    Avg latency
+                    <p className="mt-1 text-lg font-semibold text-slate-900">
+                      {avgLatency.toFixed(1)} ms
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <p className="text-base font-semibold text-slate-900">Recent Activity Feed</p>
+              <div className="mt-4 space-y-2">
+                {ACTIVITIES.map((item, idx) => (
+                  <div
+                    key={item}
+                    className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 transition hover:border-blue-200 hover:bg-blue-50/60"
+                  >
+                    <span
+                      className={`mt-1 inline-flex h-2.5 w-2.5 rounded-full ${idx === 2
+                        ? "bg-rose-500"
+                        : idx === 1
+                          ? "bg-amber-500"
+                          : "bg-emerald-500"
+                        }`}
+                    />
+                    <p className="text-sm text-slate-700">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
+          </section>
         </div>
       </BaseLayout>
     </div>
