@@ -28,7 +28,7 @@ export function LoginForm() {
   };
 
   return (
-    <form className="card space-y-5 p-6 sm:p-8" onSubmit={handleSubmit}>
+    <form className="card space-y-5 p-6 sm:p-8" onSubmit={handleSubmit} autoComplete="off">
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium">
           {error}
@@ -39,7 +39,7 @@ export function LoginForm() {
         id="login-username"
         name="username"
         type="text"
-        autoComplete="username"
+        autoComplete="off"
         required
         aria-label="Username"
         className={fieldClassName}
@@ -51,7 +51,7 @@ export function LoginForm() {
         id="login-password"
         name="password"
         type="password"
-        autoComplete="current-password"
+        autoComplete="off"
         required
         aria-label="Password"
         className={fieldClassName}
