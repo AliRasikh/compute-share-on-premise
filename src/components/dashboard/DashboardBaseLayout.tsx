@@ -7,7 +7,8 @@ export function DashboardBaseLayout({ children, className = "" }: { children: Re
   const pathname = usePathname();
 
   const isCompute = pathname.startsWith("/dashboard/compute");
-  const headerTitle = isCompute ? "Compute Engine" : "Network Dashboard";
+  const isMyNodes = pathname.startsWith("/dashboard/my-nodes");
+  const headerTitle = isCompute ? "Compute Engine" : isMyNodes ? "My Nodes" : "Network Dashboard";
 
   return (
     <BaseLayout

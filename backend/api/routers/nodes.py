@@ -55,21 +55,34 @@ async def list_nodes(request: Request):
             except Exception:
                 pass
             
-            # Extract resource info
-            resources = detail.get("Resources") or detail.get("NodeResources", {})
+            # Extract resource info from NodeResources (preferred) or fall back to Resources
+            node_res = detail.get("NodeResources", {})
+            res = detail.get("Resources", {})
             meta = detail.get("Meta", {})
             attributes = detail.get("Attributes", {})
             
-            # Try to get CPU and memory from different possible locations
-            cpu_total = 0
-            mem_total = 0
-            disk_total = 0
+            # CPU: prefer NodeResources.Processors.Topology.Cores count
+            cpu_cores = 0
+            cpu_mhz = 0
+            processors = node_res.get("Processors", {})
+            topology = processors.get("Topology", {})
+            cores_list = topology.get("Cores", [])
+            if cores_list:
+                cpu_cores = len(cores_list)
+                # Use BaseSpeed from first core as representative MHz per core
+                cpu_mhz = cores_list[0].get("BaseSpeed", 0) * cpu_cores
+            elif res.get("CPU"):
+                cpu_mhz = res.get("CPU", 0)
+                # Estimate cores from attributes
+                cpu_cores = int(attributes.get("cpu.numcores", "0") or "0")
             
-            res = detail.get("Resources", {})
-            if res:
-                cpu_total = res.get("CPU", 0)
-                mem_total = res.get("MemoryMB", 0)
-                disk_total = res.get("DiskMB", 0)
+            # Memory: prefer NodeResources.Memory.MemoryMB
+            mem_res = node_res.get("Memory", {})
+            mem_total = mem_res.get("MemoryMB", 0) or res.get("MemoryMB", 0)
+            
+            # Disk: prefer NodeResources.Disk.DiskMB
+            disk_res = node_res.get("Disk", {})
+            disk_total = disk_res.get("DiskMB", 0) or res.get("DiskMB", 0)
             
             node_info = {
                 "id": node_id,
@@ -89,10 +102,10 @@ async def list_nodes(request: Request):
                 
                 # Resources
                 "resources": {
-                    "cpu_mhz": cpu_total,
+                    "cpu_mhz": cpu_mhz,
                     "memory_mb": mem_total,
                     "disk_mb": disk_total,
-                    "cpu_cores": meta.get("cpu_cores", "0"),
+                    "cpu_cores": str(cpu_cores),
                 },
                 
                 # Allocations

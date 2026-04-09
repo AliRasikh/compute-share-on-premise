@@ -1,23 +1,62 @@
-name: Deploy Backend
+name: Deploy Application
 
 on:
   push:
     branches: [main]
-    paths:
-      - 'backend/**'
 
 env:
-  DEPLOY_SERVER_IP: ${{ secrets.DEPLOY_SERVER_IP}}
+  DEPLOY_SERVER_IP: ${{ secrets.DEPLOY_SERVER_IP }}
+  SSH_USER: ${{ secrets.SSH_USER }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
 jobs:
-  deploy:
+  deploy-backend:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger deploy on server
         run: |
-          echo "Deploying to $DEPLOY_SERVER_IP..."
+          echo "Deploying backend to $DEPLOY_SERVER_IP..."
           curl -X POST http://${{ env.DEPLOY_SERVER_IP }}:9000/deploy \
             --max-time 10 \
             --retry 2 \
             -o /dev/null -w "HTTP %{http_code}" \
-            && echo " - Deploy triggered!"
+            && echo " - Deploy triggered!" || echo "Webhook failed, check target server logs."
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Frontend via SSH and pm2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Ensure pm2 is installed
+            if ! command -v pm2 &> /dev/null; then
+              npm install -g pm2
+            fi
+            
+            # Setup repository directory
+            if [ ! -d "/root/compute-share-on-premise" ]; then
+              git clone https://github.com/AliRasikh/compute-share-on-premise.git /root/compute-share-on-premise
+            fi
+            
+            cd /root/compute-share-on-premise
+            
+            # Fetch latest
+            git pull origin main
+            
+            # Install packages and build Next.js
+            npm install
+            npm run build
+            
+            # Copy static files for standalone Next.js server
+            cp -r .next/static .next/standalone/.next/static
+            cp -r public .next/standalone/public
+            
+            # Restart or start Next.js application using pm2
+            cd .next/standalone
+            pm2 delete next-frontend || true
+            PORT=3000 pm2 start server.js --name "next-frontend"
+            pm2 save
