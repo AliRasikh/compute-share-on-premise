@@ -4,6 +4,7 @@ export function Footer() {
       <p className="font-medium tracking-wide text-slate-600">
         © {new Date().getFullYear()} Corimb
       </p>
+      <p className="text-slate-400 mt-0.5">🇪🇺 Proudly hosted in the EU</p>
     </footer>
   );
 }
