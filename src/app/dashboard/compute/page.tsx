@@ -536,7 +536,7 @@ export default function ComputePage() {
         <div className="flex flex-wrap justify-between items-end gap-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-slate-900">Available Capacity</h2>
-            <p className="mt-2 text-slate-500 text-lg">
+            <p className="text-slate-500 text-base font-normal leading-normal">
               Showing {readyCount} of {nodes.length} nodes matching your criteria
             </p>
           </div>

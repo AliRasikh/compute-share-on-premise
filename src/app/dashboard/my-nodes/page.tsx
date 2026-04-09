@@ -139,7 +139,7 @@ export default function MyNodesPage() {
       />
 
       {/* Main Content */}
-      <div className="w-full py-8 flex flex-col gap-8">
+      <div className="w-full flex flex-col gap-8">
         {/* Header */}
         <div className="flex flex-col gap-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
