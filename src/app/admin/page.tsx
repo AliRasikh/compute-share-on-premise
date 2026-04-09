@@ -184,11 +184,30 @@ function ServerCard({ server }: { server: ServerNode }) {
 export default function AdminDashboardPage() {
   const [hiddenDatasets, setHiddenDatasets] = useState<Record<number, boolean>>({});
   const [servers, setServers] = useState<ServerNode[]>([]);
+  const [timeLabels, setTimeLabels] = useState<string[]>(TIME_LABELS);
   const [activities, setActivities] = useState<{ message: string; type: 'success' | 'warning' | 'error' | 'info' }[]>([
     { message: "New node 'omega-node-02' joined the compute cluster", type: "success" },
     { message: "Scheduled maintenance for 'beta-systems' has been completed", type: "info" },
     { message: "Unexpected latency spike detected in eu-west-1 region", type: "warning" },
   ]);
+
+  useEffect(() => {
+    const updateTimeLabels = () => {
+      const labels = [];
+      const now = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 4 * 60 * 60 * 1000);
+        labels.push(
+          d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+        );
+      }
+      setTimeLabels(labels);
+    };
+
+    updateTimeLabels();
+    const interval = setInterval(updateTimeLabels, 15 * 60 * 1000); // Update every 15 minutes
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -280,7 +299,7 @@ export default function AdminDashboardPage() {
 
   const demandLineData = useMemo(
     () => ({
-      labels: TIME_LABELS,
+      labels: timeLabels,
       datasets: servers.map((server, idx) => {
         const color = CHART_COLORS[idx % CHART_COLORS.length];
         return {
@@ -296,7 +315,7 @@ export default function AdminDashboardPage() {
         };
       }),
     }),
-    [servers, hiddenDatasets],
+    [servers, hiddenDatasets, timeLabels],
   );
 
   const demandLineOptions = useMemo<ChartOptions<"line">>(
