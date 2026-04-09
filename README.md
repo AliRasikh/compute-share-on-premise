@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.png" alt="Corimb — Sovereign Compute Engine" width="100%" />
+  <img src="public/assets/corimb_logo.svg" alt="Corimb — Sovereign Compute Engine" width="100%" />
 </p>
 
 <p align="center">
