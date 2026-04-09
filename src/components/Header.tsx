@@ -53,6 +53,10 @@ export function Header({
   const eyebrowText = eyebrow === undefined ? DEFAULT_EYEBROW : eyebrow;
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
+  const isDashboardNavActive = pathname === dashboardHref;
+  const isMyNodesNavActive = pathname?.startsWith("/dashboard/my-nodes") ?? false;
+  const isNewTaskNavActive =
+    pathname === newTaskHref || (pathname?.startsWith("/dashboard/compute") ?? false);
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -113,27 +117,35 @@ export function Header({
                   <>
                     <Link
                       href={dashboardHref}
-                      className={
-                        pathname === dashboardHref || pathname === "/"
-                          ? activeNavTextClass
-                          : navTextClass
-                      }
+                      className={isDashboardNavActive ? activeNavTextClass : navTextClass}
+                      aria-current={isDashboardNavActive ? "page" : undefined}
                     >
                       Dashboard
                     </Link>
-                    <Link href="/dashboard/my-nodes" className={navTextClass}>
+                    <Link
+                      href="/dashboard/my-nodes"
+                      className={isMyNodesNavActive ? activeNavTextClass : navTextClass}
+                      aria-current={isMyNodesNavActive ? "page" : undefined}
+                    >
                       My Nodes
                     </Link>
                     {onNewTaskClick ? (
                       <button
                         type="button"
                         onClick={onNewTaskClick}
-                        className={`${navTextClass} cursor-pointer border-0 bg-transparent p-0 font-sans`}
+                        className={`${
+                          isNewTaskNavActive ? activeNavTextClass : navTextClass
+                        } cursor-pointer border-0 bg-transparent p-0 font-sans`}
+                        aria-current={isNewTaskNavActive ? "page" : undefined}
                       >
                         New Task
                       </button>
                     ) : (
-                      <Link href={newTaskHref} className={navTextClass}>
+                      <Link
+                        href={newTaskHref}
+                        className={isNewTaskNavActive ? activeNavTextClass : navTextClass}
+                        aria-current={isNewTaskNavActive ? "page" : undefined}
+                      >
                         New Task
                       </Link>
                     )}
