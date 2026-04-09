@@ -118,8 +118,51 @@ export default function DashboardPage() {
   const nodesReady = clusterMetrics?.cluster?.nodes?.ready ?? 0;
   const nodesTotal = clusterMetrics?.cluster?.nodes?.total ?? 0;
 
+  const [showEuBanner, setShowEuBanner] = useState(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("eu-banner-dismissed") !== "true";
+    }
+    return true;
+  });
+
+  const dismissBanner = () => {
+    setShowEuBanner(false);
+    sessionStorage.setItem("eu-banner-dismissed", "true");
+  };
+
   return (
     <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+      {/* EU Sovereignty Info Banner */}
+      {showEuBanner && (
+        <div className="relative bg-white border border-blue-200 rounded-xl p-5 pr-12 shadow-sm">
+          <button
+            onClick={dismissBanner}
+            className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+            aria-label="Close banner"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <p className="font-bold text-slate-900 text-[15px] mb-1">
+            <span className="text-blue-600">🇪🇺</span> Help support European autonomy!
+          </p>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Make sovereignty practical. Prefer European alternatives for everyday tools (docs, storage, messaging) — small switches add up.
+          </p>
+          <p className="text-sm text-slate-600 mt-1.5">
+            Discover{" "}
+            <a href="https://european-alternatives.eu/" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-semibold hover:underline">
+              European alternatives for digital products
+            </a>{" "}
+            and{" "}
+            <a href="https://www.goeuropean.org/" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-semibold hover:underline">
+              European products and services
+            </a>.
+          </p>
+        </div>
+      )}
 
       {aiDemoMessage && (
         <div className="p-4 bg-slate-800 text-emerald-400 rounded-lg font-mono text-sm shadow-inner flex items-center gap-3">
