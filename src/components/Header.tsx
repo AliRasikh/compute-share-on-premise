@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
 import { CorimbLogoImg } from "@/components/CorimbLogoImg";
 
 const navTextClass =
@@ -51,6 +52,27 @@ export function Header({
 }: HeaderProps) {
   const eyebrowText = eyebrow === undefined ? DEFAULT_EYEBROW : eyebrow;
   const pathname = usePathname();
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("auth-user");
+    setMenuOpen(false);
+    router.push("/");
+  };
 
   return (
     <header
@@ -106,21 +128,42 @@ export function Header({
             ) : null}
 
             {showProfileButton ? (
-              <button
-                type="button"
-                onClick={onManageProfileClick}
-                className="flex h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-200/80 bg-blue-600 text-left shadow-sm transition hover:border-slate-300 hover:opacity-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-                aria-label="Manage profile"
-                title="Manage profile"
-              >
-                {avatarSrc ? (
-                  <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center text-[11px] font-bold text-white">
-                    {initials}
-                  </span>
+              <div className="relative" ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((v) => !v)}
+                  className="flex h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-200/80 bg-blue-600 text-left shadow-sm transition hover:border-slate-300 hover:opacity-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                  aria-label="Profile menu"
+                  title="Profile menu"
+                >
+                  {avatarSrc ? (
+                    <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-[11px] font-bold text-white">
+                      {initials}
+                    </span>
+                  )}
+                </button>
+
+                {/* Profile Dropdown */}
+                {menuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-white border border-slate-200 shadow-lg py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-4 py-2.5 border-b border-slate-100">
+                      <p className="text-xs font-bold text-slate-900 uppercase tracking-wider">Account</p>
+                      <p className="text-xs text-slate-500 mt-0.5 font-mono">demo</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors text-left"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Log out
+                    </button>
+                  </div>
                 )}
-              </button>
+              </div>
             ) : null}
           </div>
         ) : null}
