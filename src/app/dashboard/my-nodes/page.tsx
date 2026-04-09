@@ -18,6 +18,12 @@ type RunningAllocation = {
   status: string;
 };
 
+type LoadSnapshot = {
+  load_percent: number;
+  cpu_percent?: number;
+  memory_percent?: number;
+};
+
 type ClusterNode = {
   id: string;
   short_id: string;
@@ -38,6 +44,7 @@ type ClusterNode = {
   kernel: string;
   arch: string;
   meta: Record<string, string>;
+  load_snapshot?: LoadSnapshot | null;
 };
 
 type NodesResponse = {
@@ -49,6 +56,7 @@ type NodesResponse = {
     companies: string[];
     company_count: number;
   };
+  snapshot_at?: string;
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -60,23 +68,14 @@ function formatMemory(mb: number): string {
   return gb >= 1 ? `${gb.toFixed(1)} GB` : `${mb} MB`;
 }
 
-/** Deterministic sparkline path from node id */
-function sparklinePath(id: string): string {
-  // Use chars from the node ID to generate pseudo-random y values
-  const seed = id.replace(/-/g, "").slice(0, 14);
-  const points: number[] = [];
-  for (let i = 0; i < 7; i++) {
-    const charCode = seed.charCodeAt(i * 2) || 65;
-    // Map to range 5-38 (within 0-40 viewBox)
-    points.push(5 + ((charCode * 7 + i * 13) % 33));
-  }
-  const segments = points
-    .map((y, i) => {
-      const x = Math.round((i / (points.length - 1)) * 100);
-      return `${i === 0 ? "M" : "L"}${x},${y}`;
-    })
-    .join(" ");
-  return segments;
+function formatSnapshotTime(iso: string | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    dateStyle: "short",
+    timeStyle: "medium",
+  });
 }
 
 const INSTALL_COMMAND = `curl -fsSL https://corimb.garden/install | sudo bash -s -- \\
@@ -92,10 +91,11 @@ export default function MyNodesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [snapshotAt, setSnapshotAt] = useState<string | null>(null);
 
   const fetchNodes = useCallback(async () => {
     try {
-      const res = await fetch("/api/compute/nodes");
+      const res = await fetch("/api/compute/nodes?include_stats=true");
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${res.status}`);
@@ -103,8 +103,10 @@ export default function MyNodesPage() {
       const data: NodesResponse = await res.json();
       setNodes(data.nodes ?? []);
       setSummary(data.summary ?? null);
+      setSnapshotAt(data.snapshot_at ?? null);
       setError(null);
     } catch (err) {
+      setSnapshotAt(null);
       setError(err instanceof Error ? err.message : "Failed to fetch nodes");
     } finally {
       setLoading(false);
@@ -149,26 +151,34 @@ export default function MyNodesPage() {
                 Manage your contributed hardware and track cluster health.
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={fetchNodes}
-                disabled={loading}
-                className="flex items-center justify-center gap-1.5 rounded-md h-10 px-4 border border-slate-200 bg-white text-slate-600 text-sm font-medium shadow-sm hover:bg-slate-50 transition disabled:opacity-50"
-              >
-                <span className={`material-symbols-outlined ${loading ? "animate-spin" : ""}`} style={{ fontSize: "16px" }}>
-                  refresh
-                </span>
-                Refresh
-              </button>
-              <button
-                onClick={() => setShowModal(true)}
-                className="flex min-w-[120px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-10 px-6 bg-blue-600 text-white text-sm font-bold leading-normal shadow-sm hover:bg-blue-700 transition"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
-                  add
-                </span>
-                <span>Add Node</span>
-              </button>
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={fetchNodes}
+                  disabled={loading}
+                  className="flex items-center justify-center gap-1.5 rounded-md h-10 px-4 border border-slate-200 bg-white text-slate-600 text-sm font-medium shadow-sm hover:bg-slate-50 transition disabled:opacity-50"
+                >
+                  <span className={`material-symbols-outlined ${loading ? "animate-spin" : ""}`} style={{ fontSize: "16px" }}>
+                    refresh
+                  </span>
+                  Refresh
+                </button>
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="flex min-w-[120px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-md h-10 px-6 bg-blue-600 text-white text-sm font-bold leading-normal shadow-sm hover:bg-blue-700 transition"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
+                    add
+                  </span>
+                  <span>Add Node</span>
+                </button>
+              </div>
+              {snapshotAt ? (
+                <p className="text-xs text-slate-500 text-right max-w-[280px]">
+                  Last snapshot:{" "}
+                  <time dateTime={snapshotAt}>{formatSnapshotTime(snapshotAt)}</time>
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -287,7 +297,8 @@ export default function MyNodesPage() {
                   : node.os || node.meta?.os || "–";
               const datacenter = node.datacenter || node.meta?.datacenter || "–";
               const isSecure = node.meta?.secure === "true" || (node.id.charCodeAt(0) % 2) === 0;
-              const sparkline = sparklinePath(node.id);
+              const loadPct = node.load_snapshot?.load_percent;
+              const hasLoad = typeof loadPct === "number" && !Number.isNaN(loadPct);
 
               return (
                 <div
@@ -371,36 +382,46 @@ export default function MyNodesPage() {
                     )}
                   </div>
 
-                  {/* Sparkline Area */}
+                  {/* Nomad client stats snapshot (point-in-time load) */}
                   <div className="mt-auto border-t border-slate-50 bg-slate-50/50 p-4 relative rounded-b-xl">
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="text-xs font-medium text-slate-500">
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-slate-600">Load snapshot</p>
+                        <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
+                          Nomad client stats (CPU + memory). See page header for refresh time.
+                        </p>
+                      </div>
+                      <p className="text-xs font-mono text-slate-400 shrink-0">{node.short_id}</p>
+                    </div>
+                    {hasLoad ? (
+                      <>
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-2xl font-bold tabular-nums text-slate-900">{loadPct.toFixed(0)}%</span>
+                          {node.load_snapshot?.cpu_percent != null && node.load_snapshot?.memory_percent != null ? (
+                            <span className="text-[10px] text-slate-500 text-right">
+                              CPU ~{node.load_snapshot.cpu_percent}% · RAM ~{node.load_snapshot.memory_percent}%
+                            </span>
+                          ) : null}
+                        </div>
+                        <div
+                          className="h-3 w-full bg-slate-200/90 rounded-full overflow-hidden"
+                          role="progressbar"
+                          aria-valuenow={Math.round(loadPct)}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-label="Combined load snapshot percent"
+                        >
+                          <div
+                            className="h-full rounded-full bg-linear-to-r from-blue-500 to-indigo-600 transition-[width] duration-300"
+                            style={{ width: `${Math.min(100, Math.max(0, loadPct))}%` }}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-xs text-slate-500">
+                        No live stats (node down or client unreachable). Try again after refresh.
                       </p>
-                      <p className="text-xs font-mono text-slate-400">{node.short_id}</p>
-                    </div>
-                    <div className="h-[40px] w-full relative">
-                      <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 40">
-                        <path
-                          d={sparkline}
-                          fill="none"
-                          stroke="#2563eb"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                        />
-                        <path
-                          d={`${sparkline} L100,40 L0,40 Z`}
-                          fill={`url(#grad-${node.short_id})`}
-                          opacity="0.15"
-                        />
-                        <defs>
-                          <linearGradient id={`grad-${node.short_id}`} x1="0%" x2="0%" y1="0%" y2="100%">
-                            <stop offset="0%" style={{ stopColor: "#2563eb", stopOpacity: 1 }} />
-                            <stop offset="100%" style={{ stopColor: "#2563eb", stopOpacity: 0 }} />
-                          </linearGradient>
-                        </defs>
-                      </svg>
-                    </div>
+                    )}
                   </div>
                 </div>
               );

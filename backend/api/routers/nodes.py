@@ -5,7 +5,11 @@
 # Shows which companies have contributed compute and their resource status.
 # ============================================================================
 
+import asyncio
 import logging
+from datetime import datetime, timezone
+from typing import Any, Optional
+
 from fastapi import APIRouter, HTTPException, Request
 
 logger = logging.getLogger("sovereign-compute.nodes")
@@ -13,8 +17,44 @@ logger = logging.getLogger("sovereign-compute.nodes")
 router = APIRouter()
 
 
+def _summarize_nomad_client_stats(stats: Optional[dict]) -> Optional[dict[str, Any]]:
+    """Derive CPU %, memory %, and a single combined load % from Nomad /v1/client/stats JSON."""
+    if not stats:
+        return None
+    cpu_list = stats.get("CPU") or []
+    totals: list[float] = []
+    for c in cpu_list:
+        t = c.get("Total")
+        if isinstance(t, (int, float)):
+            totals.append(float(t))
+    cpu_pct = sum(totals) / len(totals) if totals else None
+
+    mem = stats.get("Memory") or {}
+    total = mem.get("Total", 0) or 0
+    used = mem.get("Used", 0) or 0
+    mem_pct = (used / total * 100.0) if total > 0 else None
+
+    if cpu_pct is not None and mem_pct is not None:
+        load_pct = (cpu_pct + mem_pct) / 2.0
+    elif cpu_pct is not None:
+        load_pct = cpu_pct
+    elif mem_pct is not None:
+        load_pct = mem_pct
+    else:
+        return None
+
+    out: dict[str, Any] = {
+        "load_percent": round(load_pct, 1),
+    }
+    if cpu_pct is not None:
+        out["cpu_percent"] = round(cpu_pct, 1)
+    if mem_pct is not None:
+        out["memory_percent"] = round(mem_pct, 1)
+    return out
+
+
 @router.get("/nodes")
-async def list_nodes(request: Request):
+async def list_nodes(request: Request, include_stats: bool = False):
     """
     List all nodes in the cluster with their status and resources.
     
@@ -128,8 +168,8 @@ async def list_nodes(request: Request):
         total = len(nodes)
         ready = sum(1 for n in nodes if n["status"] == "ready")
         companies = list(set(n["company"] for n in nodes))
-        
-        return {
+
+        payload: dict = {
             "nodes": nodes,
             "summary": {
                 "total": total,
@@ -139,6 +179,25 @@ async def list_nodes(request: Request):
                 "company_count": len(companies),
             },
         }
+
+        if include_stats:
+            snapshot_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+            async def _fetch_stats(nid: str):
+                try:
+                    return await nomad.get_node_stats(nid.strip())
+                except Exception:
+                    return None
+
+            raw_stats_list = await asyncio.gather(
+                *(_fetch_stats(n["id"]) for n in nodes)
+            )
+            for i, raw in enumerate(raw_stats_list):
+                nodes[i]["load_snapshot"] = _summarize_nomad_client_stats(raw)
+
+            payload["snapshot_at"] = snapshot_at
+
+        return payload
     except Exception as e:
         logger.error(f"Failed to list nodes: {e}")
         raise HTTPException(status_code=502, detail=f"Nomad API error: {str(e)}")
