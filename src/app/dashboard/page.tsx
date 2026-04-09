@@ -135,10 +135,10 @@ export default function DashboardPage() {
 
       {/* EU Sovereignty Info Banner */}
       {showEuBanner && (
-        <div className="relative bg-white border border-blue-200 rounded-xl p-5 pr-12 shadow-sm">
+        <div className="relative bg-emerald-50 border border-emerald-200 rounded-xl p-5 pr-12 shadow-sm">
           <button
             onClick={dismissBanner}
-            className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+            className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-emerald-400 hover:text-emerald-700 hover:bg-emerald-100 transition"
             aria-label="Close banner"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -146,18 +146,18 @@ export default function DashboardPage() {
             </svg>
           </button>
           <p className="font-bold text-slate-900 text-[15px] mb-1">
-            <span className="text-blue-600">🇪🇺</span> Help support European autonomy!
+            <span>🇪🇺</span> Help support European autonomy!
           </p>
           <p className="text-sm text-slate-600 leading-relaxed">
             Make sovereignty practical. Prefer European alternatives for everyday tools (docs, storage, messaging) — small switches add up.
           </p>
           <p className="text-sm text-slate-600 mt-1.5">
             Discover{" "}
-            <a href="https://european-alternatives.eu/" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-semibold hover:underline">
+            <a href="https://european-alternatives.eu/" target="_blank" rel="noopener noreferrer" className="text-emerald-700 font-semibold hover:underline">
               European alternatives for digital products
             </a>{" "}
             and{" "}
-            <a href="https://www.goeuropean.org/" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-semibold hover:underline">
+            <a href="https://www.goeuropean.org/" target="_blank" rel="noopener noreferrer" className="text-emerald-700 font-semibold hover:underline">
               European products and services
             </a>.
           </p>
