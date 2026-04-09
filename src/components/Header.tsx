@@ -81,7 +81,7 @@ export function Header({
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
-          href={pathname?.startsWith("/dashboard") ? "/dashboard" : "/"}
+          href={isAdmin ? "/admin" : pathname?.startsWith("/dashboard") ? "/dashboard" : "/"}
           className="flex min-w-0 flex-1 items-center gap-3 no-underline"
         >
           <CorimbLogoImg />
