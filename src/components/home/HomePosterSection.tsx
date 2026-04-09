@@ -17,7 +17,7 @@ export function HomePosterSection({ title, subtitle }: HomePosterSectionProps) {
       {title ? (
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#718096]">{title}</p>
       ) : null}
-      <p className="mt-3 max-w-md text-lg font-semibold text-[#1a202c] sm:text-xl">
+      <p className="mt-3 text-lg text-[#1a202c] sm:text-xl">
         {subtitle ?? "Your message here"}
       </p>
     </>

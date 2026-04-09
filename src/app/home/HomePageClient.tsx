@@ -20,13 +20,13 @@ export function HomePageClient() {
           <HomeTextSection
             eyebrow="Offer"
             title="What people buy"
-            body="Teams buy predictable compute: GPUs for training and inference, CPUs for batch and services. They want transparent pricing, clear capacity, and a path from demo to production without surprises."
+            body="On our platform you can rent CPU, GPU, and RAM exactly when you need it—for AI, simulations, data processing, or short-term cloud bursts. All compute comes from EU-based servers, giving you fast, local, and legally compliant resources without relying on global cloud giants."
           />
         </AnimatedSection>
 
         <AnimatedSection delay={0.05}>
           <HomePosterSection
-            title="Poster / background"
+            title="Digital Sovereignty in the EU"
             subtitle="Space for a campaign visual, product shot, or any message you want to highlight."
           />
         </AnimatedSection>
@@ -36,7 +36,7 @@ export function HomePageClient() {
             id="partner"
             eyebrow="Partners"
             title="Why you should become a partner"
-            body="Share capacity when you have headroom, consume when you need burst, and keep governance in one place. Partners help balance the network—better utilization for sellers and more optionality for buyers."
+            body="Digital sovereignty means having control over your own data and infrastructure under laws you trust. In the EU today, this is crucial: too many companies still rely on foreign cloud providers, creating risks for control, compliance, and resilience. By keeping compute local, Europe strengthens independence and actively contributes to secure, EU-based digital infrastructure."
           />
         </AnimatedSection>
       </main>

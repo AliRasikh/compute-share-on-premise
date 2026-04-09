@@ -52,7 +52,7 @@ export function MarketingHeader() {
         <nav className="flex items-center gap-4 text-sm font-medium text-slate-600">
           <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }} transition={linkSpring}>
             <Link href="/" className="transition hover:text-slate-900">
-              Log-in
+              Log in
             </Link>
           </motion.div>
         </nav>
