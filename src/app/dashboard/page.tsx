@@ -118,12 +118,13 @@ export default function DashboardPage() {
   const nodesReady = clusterMetrics?.cluster?.nodes?.ready ?? 0;
   const nodesTotal = clusterMetrics?.cluster?.nodes?.total ?? 0;
 
-  const [showEuBanner, setShowEuBanner] = useState(() => {
-    if (typeof window !== "undefined") {
-      return sessionStorage.getItem("eu-banner-dismissed") !== "true";
+  const [showEuBanner, setShowEuBanner] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem("eu-banner-dismissed") !== "true") {
+      setShowEuBanner(true);
     }
-    return true;
-  });
+  }, []);
 
   const dismissBanner = () => {
     setShowEuBanner(false);
