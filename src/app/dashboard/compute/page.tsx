@@ -757,7 +757,7 @@ export default function ComputePage() {
                           <h3 className="font-bold text-lg text-slate-900">{node.name}</h3>
                           <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
                             <span className="material-symbols-outlined text-[14px]">location_on</span>
-                            {node.datacenter} • {node.company !== "unknown" ? node.company : "–"}
+                            {node.datacenter}
                           </div>
                         </div>
                         <div

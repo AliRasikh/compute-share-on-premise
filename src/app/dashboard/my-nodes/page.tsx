@@ -362,7 +362,6 @@ export default function MyNodesPage() {
                   <div className="mt-auto border-t border-slate-50 bg-slate-50/50 p-4 relative">
                     <div className="flex justify-between items-center mb-2">
                       <p className="text-xs font-medium text-slate-500">
-                        {node.company !== "unknown" ? node.company : "Company"}
                       </p>
                       <p className="text-xs font-mono text-slate-400">{node.short_id}</p>
                     </div>
