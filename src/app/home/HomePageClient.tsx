@@ -37,6 +37,8 @@ export function HomePageClient() {
             eyebrow="Partners"
             title="Why you should become a partner"
             body="Digital sovereignty means having control over your own data and infrastructure under laws you trust. In the EU today, this is crucial: too many companies still rely on foreign cloud providers, creating risks for control, compliance, and resilience. By keeping compute local, Europe strengthens independence and actively contributes to secure, EU-based digital infrastructure."
+            ctaLabel="Become a Partner Now"
+            ctaHref="/login"
           />
         </AnimatedSection>
 
