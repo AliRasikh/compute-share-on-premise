@@ -257,7 +257,7 @@ export default function MyNodesPage() {
                   </div>
                 </div>
                 <div className="border-t border-slate-50 bg-slate-50/50 p-4">
-                  <div className="h-[40px] bg-slate-100 rounded" />
+                  <div className="h-4 w-48 bg-slate-100 rounded" />
                 </div>
               </div>
             ))}
@@ -301,6 +301,13 @@ export default function MyNodesPage() {
               const isSecure = node.meta?.secure === "true" || (node.id.charCodeAt(0) % 2) === 0;
               const loadPct = node.load_snapshot?.load_percent;
               const hasLoad = typeof loadPct === "number" && !Number.isNaN(loadPct);
+              const cpuPct = node.load_snapshot?.cpu_percent;
+              const memPct = node.load_snapshot?.memory_percent;
+              const hasCpuRamLine =
+                typeof cpuPct === "number" &&
+                !Number.isNaN(cpuPct) &&
+                typeof memPct === "number" &&
+                !Number.isNaN(memPct);
 
               return (
                 <div
@@ -390,35 +397,21 @@ export default function MyNodesPage() {
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-slate-600">Load snapshot</p>
                         <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
-                          Nomad client stats (CPU + memory). See page header for refresh time.
+                          Workload metrics from Nomad allocations. See page header for refresh time.
                         </p>
                       </div>
                       <p className="text-xs font-mono text-slate-400 shrink-0">{node.short_id}</p>
                     </div>
                     {hasLoad ? (
-                      <>
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <span className="text-2xl font-bold tabular-nums text-slate-900">{loadPct.toFixed(0)}%</span>
-                          {node.load_snapshot?.cpu_percent != null && node.load_snapshot?.memory_percent != null ? (
-                            <span className="text-[10px] text-slate-500 text-right">
-                              CPU ~{node.load_snapshot.cpu_percent}% · RAM ~{node.load_snapshot.memory_percent}%
-                            </span>
-                          ) : null}
-                        </div>
-                        <div
-                          className="h-3 w-full bg-slate-200/90 rounded-full overflow-hidden"
-                          role="progressbar"
-                          aria-valuenow={Math.round(loadPct)}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                          aria-label="Combined load snapshot percent"
-                        >
-                          <div
-                            className="h-full rounded-full bg-linear-to-r from-blue-500 to-indigo-600 transition-[width] duration-300"
-                            style={{ width: `${Math.min(100, Math.max(0, loadPct))}%` }}
-                          />
-                        </div>
-                      </>
+                      hasCpuRamLine ? (
+                        <p className="text-sm text-slate-700 tabular-nums">
+                          CPU ~{cpuPct}% · RAM ~{memPct}%
+                        </p>
+                      ) : (
+                        <p className="text-sm font-medium text-slate-900 tabular-nums">
+                          Load ~{loadPct.toFixed(1)}%
+                        </p>
+                      )
                     ) : (
                       <p className="text-xs text-slate-500">
                         No live stats (node down or client unreachable). Try again after refresh.

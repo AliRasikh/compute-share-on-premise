@@ -29,6 +29,13 @@ def _parse_bool_query(value: Optional[str], *, default: bool) -> bool:
     return default
 
 
+def _clamp_round_percent(value: float) -> float:
+    """Clamp to [0, 100], round to 1 decimal; never emit values above 100 (e.g. from Nomad or float noise)."""
+    x = max(0.0, min(100.0, float(value)))
+    r = round(x, 1)
+    return max(0.0, min(100.0, r))
+
+
 def _memory_rss_bytes_from_alloc_stats(st: dict) -> int:
     """Sum RSS from Nomad allocation stats (aggregate ResourceUsage and per-task)."""
     ru = st.get("ResourceUsage") or {}
@@ -114,9 +121,9 @@ async def _workload_snapshot_from_allocations(
         mem_pct = min(100.0, 100.0 * float(rss_total) / cap)
     load_pct = (cpu_avg + mem_pct) / 2.0
     return {
-        "load_percent": round(load_pct, 1),
-        "cpu_percent": round(cpu_avg, 1),
-        "memory_percent": round(mem_pct, 1),
+        "load_percent": _clamp_round_percent(load_pct),
+        "cpu_percent": _clamp_round_percent(cpu_avg),
+        "memory_percent": _clamp_round_percent(mem_pct),
         "metrics_source": "allocations",
     }
 
