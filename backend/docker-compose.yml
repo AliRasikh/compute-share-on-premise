@@ -203,7 +203,7 @@ services:
 
   # ── Headscale Auto-Setup ───────────────────────────────────────────────────
   headscale-setup:
-    image: docker:cli
+    image: docker:latest
     container_name: headscale-setup
     depends_on:
       - headscale
