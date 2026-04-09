@@ -39,7 +39,7 @@ services:
       - nomad-server-data:/opt/nomad/data
       - /sys/fs/cgroup:/sys/fs/cgroup
     healthcheck:
-      test: ["CMD", "nomad", "status"]
+      test: [ "CMD", "nomad", "status" ]
       interval: 10s
       timeout: 5s
       retries: 15
@@ -198,21 +198,30 @@ services:
     volumes:
       - ./headscale/config:/etc/headscale
       - ./headscale/data:/var/lib/headscale
-    entrypoint: /bin/sh -c
-    command: 
-      - |
-        headscale serve & 
-        PID=$$!
-        sleep 3
-        # Auto-setup user and key
-        headscale users create cluster-nodes 2>/dev/null || true
-        headscale preauthkeys create -e 14d --ephemeral --user cluster-nodes > /var/lib/headscale/current_auth_key.txt
-        echo "=========================================================="
-        echo " HEADSCALE AUTO-SETUP COMPLETE"
-        echo " Your Worker Node Auth Key is: $$(cat /var/lib/headscale/current_auth_key.txt)"
-        echo "=========================================================="
-        wait $$PID
+    command: serve
     restart: unless-stopped
+
+  # ── Headscale Auto-Setup ───────────────────────────────────────────────────
+  headscale-setup:
+    image: docker:cli
+    container_name: headscale-setup
+    depends_on:
+      - headscale
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./headscale/data:/opt/headscale-data
+    command: >
+      sh -c "
+      echo 'Waiting for Headscale to start...';
+      sleep 5;
+      docker exec headscale headscale users create cluster-nodes 2>/dev/null || true;
+      KEY=$$(docker exec headscale headscale preauthkeys create -e 14d --ephemeral --user cluster-nodes);
+      echo $$KEY > /opt/headscale-data/current_auth_key.txt;
+      echo '==========================================================';
+      echo ' HEADSCALE AUTO-SETUP COMPLETE';
+      echo ' Your Worker Node Auth Key is: ' $$KEY;
+      echo '==========================================================';
+      "
 
 volumes:
   nomad-server-data:
