@@ -144,7 +144,7 @@ export default function MyNodesPage() {
         <div className="flex flex-col gap-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
-              <h1 className="text-slate-900 font-bold text-[32px] leading-tight">My Nodes</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900">My Nodes</h1>
               <p className="text-slate-500 text-base font-normal leading-normal">
                 Manage your contributed hardware and track cluster health.
               </p>
