@@ -301,6 +301,12 @@ configure_nomad() {
     RESERVED_CPU=$((CPU_CORES * 100))  # Reserve 100MHz per core
     RESERVED_MEM=$((TOTAL_MEM_MB / 10))  # Reserve 10% memory
     
+    # Detect public IP (used for advertise block so the server sees our real IP)
+    PUBLIC_IP=$(curl -s --max-time 3 https://ifconfig.me 2>/dev/null || \
+                curl -s --max-time 3 https://api.ipify.org 2>/dev/null || \
+                hostname -I | awk '{print $1}')
+    log_step "Detected public IP: ${PUBLIC_IP}"
+    
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     CONFIG_FILE="${DATA_DIR}/config/client.hcl"
     
@@ -317,6 +323,13 @@ data_dir   = "${DATA_DIR}/data"
 
 # Bind to all interfaces
 bind_addr = "0.0.0.0"
+
+# Advertise the public IP so the server and other nodes can reach us
+advertise {
+  http = "${PUBLIC_IP}:4646"
+  rpc  = "${PUBLIC_IP}:4647"
+  serf = "${PUBLIC_IP}:4648"
+}
 
 # ── Client Configuration ────────────────────────────────────────────────────
 client {
@@ -338,7 +351,7 @@ client {
     "gpu_type"      = "${GPU_TYPE}"
     "gpu_present"   = "${GPU_PRESENT}"
     "install_date"  = "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-    "node_exporter" = "http://$(hostname -I | awk '{print $1}'):9100"
+    "node_exporter" = "http://${PUBLIC_IP}:9100"
   }
 
   # Reserve resources for the OS

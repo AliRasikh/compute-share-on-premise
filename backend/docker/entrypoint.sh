@@ -2,7 +2,7 @@
 set -e
 
 # ============================================================================
-# Sovereign Compute Engine â€” Nomad Container Entrypoint
+# Sovereign Compute Engine — Nomad Container Entrypoint
 #
 # Generates Nomad configuration from environment variables and starts the agent.
 # ============================================================================
@@ -16,6 +16,12 @@ NODE_POOL="${NODE_POOL:-shared}"
 CPU_TOTAL="${CPU_TOTAL_COMPUTE:-2000}"
 MEMORY_TOTAL="${MEMORY_TOTAL_MB:-1024}"
 
+# Port offset for host-networking mode (avoids port conflicts for multiple clients)
+PORT_OFFSET="${CLIENT_PORT_OFFSET:-0}"
+HTTP_PORT=$((4646 + PORT_OFFSET))
+RPC_PORT=$((4647 + PORT_OFFSET))
+SERF_PORT=$((4648 + PORT_OFFSET))
+
 echo "=========================================="
 echo "  Sovereign Compute Engine Node"
 echo "=========================================="
@@ -26,13 +32,14 @@ echo "  Server:     ${SERVER_ADDR}"
 echo "  Datacenter: ${DATACENTER}"
 echo "  CPU:        ${CPU_TOTAL} MHz"
 echo "  Memory:     ${MEMORY_TOTAL} MB"
+echo "  Ports:      HTTP=${HTTP_PORT} RPC=${RPC_PORT} Serf=${SERF_PORT}"
 echo "=========================================="
 
 # Fix cgroup mount for running Nomad inside Docker
 mkdir -p /sys/fs/cgroup/nomad.slice 2>/dev/null || true
 
 if [ "$ROLE" = "server" ]; then
-    # â”€â”€ Server Configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Server Configuration ─────────────────────────────────────────────────
     cat > /opt/nomad/config/nomad.hcl << HCLEOF
 datacenter = "${DATACENTER}"
 data_dir   = "/opt/nomad/data"
@@ -84,13 +91,19 @@ advertise {
 ADVEOF
 fi
 else
-    # â”€â”€ Client Configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Client Configuration ─────────────────────────────────────────────────
     cat > /opt/nomad/config/nomad.hcl << HCLEOF
 datacenter = "${DATACENTER}"
 data_dir   = "/opt/nomad/data"
 bind_addr  = "0.0.0.0"
 name       = "${NODE_NAME}"
 log_level  = "INFO"
+
+ports {
+  http = ${HTTP_PORT}
+  rpc  = ${RPC_PORT}
+  serf = ${SERF_PORT}
+}
 
 client {
   enabled = true

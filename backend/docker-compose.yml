@@ -1,10 +1,13 @@
 # ============================================================================
 # Sovereign Compute Engine — Docker Compose Demo Stack
 #
-# Spins up a complete cluster locally:
-#   1 Nomad Server (scheduler)
-#   4 Nomad Clients (simulating 4 different companies)
-#   1 FastAPI Gateway (dashboard backend)
+# Spins up a complete cluster using HOST NETWORKING:
+#   1 Nomad Server (scheduler)        — ports 4646/4647/4648
+#   4 Nomad Clients (simulated)       — ports offset by 10/20/30/40
+#   1 FastAPI Gateway (dashboard API) — port 8080
+#
+# Host networking ensures the Nomad server is reachable from both
+# Docker-provisioned clients AND external nodes on the internet.
 #
 # Usage:
 #   docker compose up --build
@@ -27,20 +30,14 @@ services:
     privileged: true
     init: true
     cgroup: host
+    network_mode: host
     environment:
       - NOMAD_ROLE=server
       - NODE_NAME=sovereign-server
       - DATACENTER=eu-west
-      - ADVERTISE_IP=95.179.248.242
-    ports:
-      - "4646:4646"    # HTTP API + UI
-      - "4647:4647"    # RPC
-      - "4648:4648"    # Serf
     volumes:
       - nomad-server-data:/opt/nomad/data
       - /sys/fs/cgroup:/sys/fs/cgroup
-    networks:
-      - sovereign-net
     healthcheck:
       test: ["CMD", "nomad", "status"]
       interval: 10s
@@ -59,23 +56,23 @@ services:
     privileged: true
     init: true
     cgroup: host
+    network_mode: host
     environment:
       - NOMAD_ROLE=client
       - COMPANY_NAME=alpha-technologies
       - NODE_NAME=alpha-node-01
-      - NOMAD_SERVER_ADDR=nomad-server:4647
+      - NOMAD_SERVER_ADDR=127.0.0.1:4647
       - DATACENTER=eu-west
       - NODE_POOL=shared
       - CPU_TOTAL_COMPUTE=4000
       - MEMORY_TOTAL_MB=2048
       - GPU_TYPE=none
       - GPU_PRESENT=false
+      - CLIENT_PORT_OFFSET=10
     volumes:
       - nomad-alpha-data:/opt/nomad/data
       - /sys/fs/cgroup:/sys/fs/cgroup
       - ./demo:/opt/demo:ro
-    networks:
-      - sovereign-net
     depends_on:
       nomad-server:
         condition: service_healthy
@@ -91,23 +88,23 @@ services:
     privileged: true
     init: true
     cgroup: host
+    network_mode: host
     environment:
       - NOMAD_ROLE=client
       - COMPANY_NAME=beta-systems
       - NODE_NAME=beta-node-01
-      - NOMAD_SERVER_ADDR=nomad-server:4647
+      - NOMAD_SERVER_ADDR=127.0.0.1:4647
       - DATACENTER=eu-west
       - NODE_POOL=shared
       - CPU_TOTAL_COMPUTE=8000
       - MEMORY_TOTAL_MB=4096
       - GPU_TYPE=nvidia-simulation
       - GPU_PRESENT=true
+      - CLIENT_PORT_OFFSET=20
     volumes:
       - nomad-beta-data:/opt/nomad/data
       - /sys/fs/cgroup:/sys/fs/cgroup
       - ./demo:/opt/demo:ro
-    networks:
-      - sovereign-net
     depends_on:
       nomad-server:
         condition: service_healthy
@@ -123,23 +120,23 @@ services:
     privileged: true
     init: true
     cgroup: host
+    network_mode: host
     environment:
       - NOMAD_ROLE=client
       - COMPANY_NAME=gamma-data
       - NODE_NAME=gamma-node-01
-      - NOMAD_SERVER_ADDR=nomad-server:4647
+      - NOMAD_SERVER_ADDR=127.0.0.1:4647
       - DATACENTER=eu-west
       - NODE_POOL=shared
       - CPU_TOTAL_COMPUTE=2000
       - MEMORY_TOTAL_MB=1024
       - GPU_TYPE=none
       - GPU_PRESENT=false
+      - CLIENT_PORT_OFFSET=30
     volumes:
       - nomad-gamma-data:/opt/nomad/data
       - /sys/fs/cgroup:/sys/fs/cgroup
       - ./demo:/opt/demo:ro
-    networks:
-      - sovereign-net
     depends_on:
       nomad-server:
         condition: service_healthy
@@ -155,23 +152,23 @@ services:
     privileged: true
     init: true
     cgroup: host
+    network_mode: host
     environment:
       - NOMAD_ROLE=client
       - COMPANY_NAME=delta-cloud-eu
       - NODE_NAME=delta-node-01
-      - NOMAD_SERVER_ADDR=nomad-server:4647
+      - NOMAD_SERVER_ADDR=127.0.0.1:4647
       - DATACENTER=eu-central
       - NODE_POOL=shared
       - CPU_TOTAL_COMPUTE=6000
       - MEMORY_TOTAL_MB=3072
       - GPU_TYPE=none
       - GPU_PRESENT=false
+      - CLIENT_PORT_OFFSET=40
     volumes:
       - nomad-delta-data:/opt/nomad/data
       - /sys/fs/cgroup:/sys/fs/cgroup
       - ./demo:/opt/demo:ro
-    networks:
-      - sovereign-net
     depends_on:
       nomad-server:
         condition: service_healthy
@@ -183,19 +180,14 @@ services:
       dockerfile: Dockerfile
     container_name: sovereign-api
     hostname: sovereign-api
+    network_mode: host
     environment:
-      - NOMAD_ADDR=http://nomad-server:4646
+      - NOMAD_ADDR=http://127.0.0.1:4646
       - NOMAD_TOKEN=
       - CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:8080,http://95.179.248.242:8080,http://95.179.248.242:3000,*
-    ports:
-      - "8080:8080"
-    networks:
-      - sovereign-net
     depends_on:
       nomad-server:
         condition: service_healthy
-
-
 
 volumes:
   nomad-server-data:
@@ -203,7 +195,3 @@ volumes:
   nomad-beta-data:
   nomad-gamma-data:
   nomad-delta-data:
-
-networks:
-  sovereign-net:
-    driver: bridge
