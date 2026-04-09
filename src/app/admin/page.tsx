@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  BarElement,
   CategoryScale,
   Chart as ChartJS,
   Filler,
@@ -13,11 +12,10 @@ import {
   Tooltip,
   type ChartOptions,
 } from "chart.js";
-import { Bar, Line } from "react-chartjs-2";
+import { Line } from "react-chartjs-2";
 import { BaseLayout } from "@/components/BaseLayout";
 
 ChartJS.register(
-  BarElement,
   CategoryScale,
   LinearScale,
   PointElement,
@@ -293,13 +291,6 @@ export default function AdminDashboardPage() {
     () => SERVERS.reduce((sum, server) => sum + server.uptime, 0) / SERVERS.length,
     [],
   );
-  const avgLatency = useMemo(
-    () =>
-      SERVERS.filter((server) => server.latencyMs > 0).reduce((sum, server) => sum + server.latencyMs, 0) /
-      SERVERS.filter((server) => server.latencyMs > 0).length,
-    [],
-  );
-  const networkThroughput = useMemo(() => avgSpeed * 34.4, [avgSpeed]);
 
   const demandLineData = useMemo(
     () => ({
@@ -379,57 +370,6 @@ export default function AdminDashboardPage() {
     [],
   );
 
-  const demandBarData = useMemo(
-    () => ({
-      labels: SERVERS.map((server) => server.company),
-      datasets: [
-        {
-          label: "Peak demand %",
-          data: SERVERS.map((server) => Math.max(...server.demandSeries)),
-          backgroundColor: ["#0f172a", "#475569", "#94a3b8", "#cbd5e1"],
-          borderRadius: 4,
-        },
-        {
-          label: "Low demand %",
-          data: SERVERS.map((server) => Math.min(...server.demandSeries)),
-          backgroundColor: "#f1f5f9",
-          borderRadius: 4,
-        },
-      ],
-    }),
-    [],
-  );
-
-  const demandBarOptions = useMemo<ChartOptions<"bar">>(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: "#334155" } },
-      },
-      scales: {
-        x: {
-          ticks: { color: "#64748b" },
-          grid: { display: false },
-          border: { color: "#e2e8f0" },
-        },
-        y: {
-          ticks: { color: "#64748b" },
-          grid: { color: "#e2e8f0" },
-          border: { color: "#e2e8f0" },
-          beginAtZero: true,
-          suggestedMax: 100,
-        },
-      },
-    }),
-    [],
-  );
-
-  const cpuUtil = Math.round((totalUsed / totalCapacity) * 100);
-  const avgRam = Math.round(
-    SERVERS.reduce((sum, server) => sum + server.ramUsage, 0) / SERVERS.length,
-  );
-
   return (
     <div className="flex min-h-screen w-full flex-1 flex-col text-slate-900">
       <BaseLayout
@@ -437,7 +377,7 @@ export default function AdminDashboardPage() {
         headerTitle="Corimb Dashboard"
       >
         <div className="space-y-6 p-4 md:p-6 xl:p-8">
-          <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-sm font-semibold text-slate-900">Compute Overview</p>
               <div className="mt-3 space-y-2">
@@ -512,7 +452,7 @@ export default function AdminDashboardPage() {
                 </span>
               </div>
 
-              <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-4">
+              <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-4">
                 {SERVERS.map((server) => (
                   <ServerCard key={server.id} server={server} />
                 ))}
@@ -520,66 +460,12 @@ export default function AdminDashboardPage() {
             </article>
           </section>
 
-          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2 items-stretch">
             <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <p className="text-base font-semibold text-slate-900">Demand Trends (24h)</p>
               <p className="text-xs text-slate-500">Demand curves for each server/company.</p>
               <div className="mt-4 h-72 rounded-xl border border-slate-200 bg-white p-3">
                 <Line data={demandLineData} options={demandLineOptions} />
-              </div>
-            </article>
-
-            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <p className="text-base font-semibold text-slate-900">Peak vs Low Demand by Server</p>
-              <p className="text-xs text-slate-500">Comparison of demand extremes for all 4 servers.</p>
-              <div className="mt-4 h-72 rounded-xl border border-slate-200 bg-white p-3">
-                <Bar data={demandBarData} options={demandBarOptions} />
-              </div>
-            </article>
-          </section>
-
-          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2 items-stretch">
-            <article className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <p className="text-base font-semibold text-slate-900">Compute Resource Statistics</p>
-              <div className="mt-4 flex flex-1 flex-col justify-between space-y-4">
-                <div>
-                  <div className="mb-1 flex justify-between text-xs text-slate-600">
-                    <span>Total CPU utilization</span>
-                    <span>{cpuUtil}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-100">
-                    <div
-                      className="h-2 rounded-full bg-slate-800"
-                      style={{ width: `${cpuUtil}%` }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1 flex justify-between text-xs text-slate-600">
-                    <span>Average RAM usage</span>
-                    <span>{avgRam}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-100">
-                    <div
-                      className="h-2 rounded-full bg-slate-600"
-                      style={{ width: `${avgRam}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    Network throughput
-                    <p className="mt-1 text-lg font-semibold text-slate-900">
-                      {networkThroughput.toFixed(1)} Gbps
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    Avg latency
-                    <p className="mt-1 text-lg font-semibold text-slate-900">
-                      {avgLatency.toFixed(1)} ms
-                    </p>
-                  </div>
-                </div>
               </div>
             </article>
 
