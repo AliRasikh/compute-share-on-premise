@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { CorimbLogoImg } from "@/components/CorimbLogoImg";
 
 const navTextClass =
   "text-sm font-medium text-slate-600 transition hover:text-slate-900";
+const activeNavTextClass =
+  "text-sm font-semibold text-slate-900 transition";
 
 type HeaderProps = {
   /**
@@ -47,6 +50,7 @@ export function Header({
   className,
 }: HeaderProps) {
   const eyebrowText = eyebrow === undefined ? DEFAULT_EYEBROW : eyebrow;
+  const pathname = usePathname();
 
   return (
     <header
@@ -69,7 +73,14 @@ export function Header({
           <div className="flex flex-wrap items-center justify-end gap-4 sm:gap-6">
             {showNavigation ? (
               <nav className="flex items-center gap-4 sm:gap-6" aria-label="Workspace">
-                <Link href={dashboardHref} className={navTextClass}>
+                <Link
+                  href={dashboardHref}
+                  className={
+                    pathname === dashboardHref || pathname === "/admin" || pathname === "/"
+                      ? activeNavTextClass
+                      : navTextClass
+                  }
+                >
                   Dashboard
                 </Link>
                 <Link href="/dashboard/my-nodes" className={navTextClass}>
