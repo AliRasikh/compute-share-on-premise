@@ -55,8 +55,8 @@ jobs:
             cp -r .next/static .next/standalone/.next/static
             cp -r public .next/standalone/public
             
-            # Restart or start Next.js application using pm2
-            cd .next/standalone
+            # Restart or start Next.js application using pm2 from the root directory 
+            # so process.cwd() has access to the backend folder
             pm2 delete next-frontend || true
-            PORT=3000 pm2 start server.js --name "next-frontend"
+            PORT=3000 pm2 start .next/standalone/server.js --name "next-frontend"
             pm2 save
