@@ -194,20 +194,46 @@ function JobTableHeader() {
   );
 }
 
+type JobActionPhase = "idle" | "loading" | "done" | "error";
+
 function JobRow({
   job,
   isExpanded,
   onToggle,
   logContent,
   isLogLoading,
+  actionPhase,
+  onCancel,
+  onStop,
 }: {
   job: JobItem;
   isExpanded: boolean;
   onToggle: () => void;
   logContent?: string;
   isLogLoading?: boolean;
+  actionPhase: JobActionPhase;
+  onCancel: (job: JobItem, e: React.MouseEvent) => void;
+  onStop: (job: JobItem, e: React.MouseEvent) => void;
 }) {
   const style = STATUS_STYLES[job.resolvedStatus] || STATUS_STYLES.dead;
+  const cancelDisabled = actionPhase === "loading" || actionPhase === "done";
+  const cancelLabel =
+    actionPhase === "loading"
+      ? "Canceling..."
+      : actionPhase === "done"
+        ? "Canceled"
+        : actionPhase === "error"
+          ? "Retry"
+          : "Cancel";
+  const stopDisabled = actionPhase === "loading" || actionPhase === "done";
+  const stopLabel =
+    actionPhase === "loading"
+      ? "Stopping..."
+      : actionPhase === "done"
+        ? "Stopped"
+        : actionPhase === "error"
+          ? "Retry"
+          : "Stop";
 
   return (
     <div className="border-b border-slate-100 last:border-b-0">
@@ -238,10 +264,40 @@ function JobRow({
         </div>
         <div className="flex items-center justify-end gap-2">
           {job.resolvedStatus === "running" && (
-            <button className="text-xs font-semibold text-slate-600 hover:text-rose-600 transition-colors" onClick={(e) => e.stopPropagation()}>Stop</button>
+            <button
+              type="button"
+              disabled={stopDisabled}
+              className={`text-xs font-semibold transition-colors ${
+                stopDisabled
+                  ? actionPhase === "done"
+                    ? "text-slate-400 cursor-default"
+                    : "text-slate-400 cursor-wait"
+                  : actionPhase === "error"
+                    ? "text-rose-600 hover:text-rose-700"
+                    : "text-slate-600 hover:text-rose-600"
+              }`}
+              onClick={(e) => onStop(job, e)}
+            >
+              {stopLabel}
+            </button>
           )}
           {job.resolvedStatus === "queued" && (
-            <button className="text-xs font-semibold text-slate-600 hover:text-rose-600 transition-colors" onClick={(e) => e.stopPropagation()}>Cancel</button>
+            <button
+              type="button"
+              disabled={cancelDisabled}
+              className={`text-xs font-semibold transition-colors ${
+                cancelDisabled
+                  ? actionPhase === "done"
+                    ? "text-slate-400 cursor-default"
+                    : "text-slate-400 cursor-wait"
+                  : actionPhase === "error"
+                    ? "text-rose-600 hover:text-rose-700"
+                    : "text-slate-600 hover:text-rose-600"
+              }`}
+              onClick={(e) => onCancel(job, e)}
+            >
+              {cancelLabel}
+            </button>
           )}
           <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -288,6 +344,7 @@ export function NetworkActivity() {
   const [logsLoading, setLogsLoading] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [modalPage, setModalPage] = useState(0);
+  const [jobActionPhase, setJobActionPhase] = useState<Record<string, JobActionPhase>>({});
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -314,6 +371,37 @@ export function NetworkActivity() {
   }, []);
 
   useEffect(() => { fetchJobs(); const id = setInterval(fetchJobs, 8000); return () => clearInterval(id); }, [fetchJobs]);
+
+  useEffect(() => {
+    const ids = new Set(jobs.map((j) => j.id));
+    setJobActionPhase((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const id of Object.keys(next)) {
+        if (!ids.has(id)) {
+          delete next[id];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [jobs]);
+
+  const stopOrCancelJob = async (job: JobItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setJobActionPhase((p) => ({ ...p, [job.id]: "loading" }));
+    try {
+      const res = await fetch(`/api/compute/jobs/${encodeURIComponent(job.id)}`, { method: "DELETE" });
+      if (!res.ok) {
+        setJobActionPhase((p) => ({ ...p, [job.id]: "error" }));
+        return;
+      }
+      setJobActionPhase((p) => ({ ...p, [job.id]: "done" }));
+      await fetchJobs();
+    } catch {
+      setJobActionPhase((p) => ({ ...p, [job.id]: "error" }));
+    }
+  };
 
   const toggleExpand = async (job: JobItem) => {
     if (expandedJobId === job.id) { setExpandedJobId(null); return; }
@@ -373,6 +461,9 @@ export function NetworkActivity() {
               onToggle={() => toggleExpand(job)}
               logContent={jobLogs[job.id]}
               isLogLoading={logsLoading[job.id]}
+              actionPhase={jobActionPhase[job.id] ?? "idle"}
+              onCancel={stopOrCancelJob}
+              onStop={stopOrCancelJob}
             />
           ))}
 
@@ -426,6 +517,9 @@ export function NetworkActivity() {
                   onToggle={() => toggleExpand(job)}
                   logContent={jobLogs[job.id]}
                   isLogLoading={logsLoading[job.id]}
+                  actionPhase={jobActionPhase[job.id] ?? "idle"}
+                  onCancel={stopOrCancelJob}
+                  onStop={stopOrCancelJob}
                 />
               ))}
             </div>
