@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { HeroAnimatedBackground } from "@/components/home/HeroAnimatedBackground";
-import { CORIMB_LOGO_SRC, CORIMB_NAME } from "@/lib/brand";
+import { CorimbLogoImg } from "@/components/CorimbLogoImg";
+import { CORIMB_NAME } from "@/lib/brand";
 import { staggerContainer, staggerItem } from "@/components/home/motionPresets";
 
 const ctaRowClassName =
@@ -28,13 +29,13 @@ export function HomeHero() {
   const ctasStatic = (
     <>
       <Link
-        href="/"
+        href="/login"
         className="inline-flex items-center justify-center rounded-xl bg-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-600"
       >
         Start compute
       </Link>
       <Link
-        href="/#partner"
+        href="/login"
         className="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15"
       >
         Become a partner
@@ -51,7 +52,7 @@ export function HomeHero() {
         transition={{ type: "spring", stiffness: 420, damping: 22 }}
       >
         <Link
-          href="/"
+          href="/login"
           className="inline-flex w-full items-center justify-center rounded-xl bg-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-blue-600 sm:w-auto"
         >
           Start compute
@@ -64,7 +65,7 @@ export function HomeHero() {
         transition={{ type: "spring", stiffness: 400, damping: 24 }}
       >
         <Link
-          href="/#partner"
+          href="/login"
           className="inline-flex w-full items-center justify-center rounded-xl border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/15 sm:w-auto"
         >
           Become a partner
@@ -79,14 +80,7 @@ export function HomeHero() {
       {prefersReducedMotion ? (
         <div className="relative z-10 mx-auto flex max-w-2xl flex-col gap-6 text-center md:text-left">
           <div className="flex items-center justify-center gap-3 md:justify-start">
-            <img
-              src={CORIMB_LOGO_SRC}
-              alt=""
-              width={40}
-              height={40}
-              className="h-10 w-10 shrink-0 object-contain brightness-0 invert"
-              aria-hidden
-            />
+            <CorimbLogoImg className="brightness-0 invert" />
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">{CORIMB_NAME}</p>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
@@ -110,14 +104,7 @@ export function HomeHero() {
             className="flex items-center justify-center gap-3 md:justify-start"
             variants={staggerItem}
           >
-            <img
-              src={CORIMB_LOGO_SRC}
-              alt=""
-              width={40}
-              height={40}
-              className="h-10 w-10 shrink-0 object-contain brightness-0 invert"
-              aria-hidden
-            />
+            <CorimbLogoImg className="brightness-0 invert" />
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">{CORIMB_NAME}</p>
           </motion.div>
           <motion.h1

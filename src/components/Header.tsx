@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CORIMB_LOGO_SRC } from "@/lib/brand";
+import { CorimbLogoImg } from "@/components/CorimbLogoImg";
 
 const navTextClass =
   "text-sm font-medium text-slate-600 transition hover:text-slate-900";
@@ -24,6 +24,8 @@ type HeaderProps = {
   /** When set, "New Task" renders as a button instead of a link. */
   onNewTaskClick?: () => void;
   showProfileButton?: boolean;
+  /** When false, workspace nav links (Dashboard, My Nodes, New Task) are hidden. */
+  showNavigation?: boolean;
   onManageProfileClick?: () => void;
   className?: string;
 };
@@ -40,6 +42,7 @@ export function Header({
   newTaskHref = "/dashboard/compute",
   onNewTaskClick,
   showProfileButton = true,
+  showNavigation = true,
   onManageProfileClick,
   className,
 }: HeaderProps) {
@@ -51,14 +54,7 @@ export function Header({
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <img
-            src={CORIMB_LOGO_SRC}
-            alt=""
-            width={36}
-            height={36}
-            className="h-9 w-9 shrink-0 object-contain"
-            aria-hidden
-          />
+          <CorimbLogoImg />
           <div className="min-w-0">
             {eyebrowText !== null ? (
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">
@@ -69,47 +65,51 @@ export function Header({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-4 sm:gap-6">
-          <nav className="flex items-center gap-4 sm:gap-6" aria-label="Workspace">
-            <Link href={dashboardHref} className={navTextClass}>
-              Dashboard
-            </Link>
-            <Link href="/dashboard/my-nodes" className={navTextClass}>
-              My Nodes
-            </Link>
-            {onNewTaskClick ? (
+        {showNavigation || showProfileButton ? (
+          <div className="flex flex-wrap items-center justify-end gap-4 sm:gap-6">
+            {showNavigation ? (
+              <nav className="flex items-center gap-4 sm:gap-6" aria-label="Workspace">
+                <Link href={dashboardHref} className={navTextClass}>
+                  Dashboard
+                </Link>
+                <Link href="/dashboard/my-nodes" className={navTextClass}>
+                  My Nodes
+                </Link>
+                {onNewTaskClick ? (
+                  <button
+                    type="button"
+                    onClick={onNewTaskClick}
+                    className={`${navTextClass} cursor-pointer border-0 bg-transparent p-0 font-sans`}
+                  >
+                    New Task
+                  </button>
+                ) : (
+                  <Link href={newTaskHref} className={navTextClass}>
+                    New Task
+                  </Link>
+                )}
+              </nav>
+            ) : null}
+
+            {showProfileButton ? (
               <button
                 type="button"
-                onClick={onNewTaskClick}
-                className={`${navTextClass} cursor-pointer border-0 bg-transparent p-0 font-sans`}
+                onClick={onManageProfileClick}
+                className="flex h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-200/80 bg-blue-600 text-left shadow-sm transition hover:border-slate-300 hover:opacity-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                aria-label="Manage profile"
+                title="Manage profile"
               >
-                New Task
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-[11px] font-bold text-white">
+                    {initials}
+                  </span>
+                )}
               </button>
-            ) : (
-              <Link href={newTaskHref} className={navTextClass}>
-                New Task
-              </Link>
-            )}
-          </nav>
-
-          {showProfileButton ? (
-            <button
-              type="button"
-              onClick={onManageProfileClick}
-              className="flex h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-200/80 bg-blue-600 text-left shadow-sm transition hover:border-slate-300 hover:opacity-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-              aria-label="Manage profile"
-              title="Manage profile"
-            >
-              {avatarSrc ? (
-                <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center text-[11px] font-bold text-white">
-                  {initials}
-                </span>
-              )}
-            </button>
-          ) : null}
-        </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </header>
   );

@@ -11,6 +11,8 @@ type BaseLayoutProps = {
   headerTitle?: string;
   /** Hide the profile action in the header */
   headerShowProfileButton?: boolean;
+  /** Hide workspace navigation in the header */
+  headerShowNavigation?: boolean;
   /** Extra classes on the scrollable main region */
   mainClassName?: string;
   /** Extra classes on the outer wrapper (e.g. min-h-screen) */
@@ -25,6 +27,7 @@ export function BaseLayout({
   headerEyebrow,
   headerTitle,
   headerShowProfileButton,
+  headerShowNavigation,
   mainClassName,
   className,
 }: BaseLayoutProps) {
@@ -33,6 +36,7 @@ export function BaseLayout({
       eyebrow={headerEyebrow}
       title={headerTitle}
       showProfileButton={headerShowProfileButton}
+      showNavigation={headerShowNavigation}
     />
   );
 
