@@ -34,7 +34,7 @@ export function HomeHero() {
         Start compute
       </Link>
       <Link
-        href="/home#partner"
+        href="/#partner"
         className="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15"
       >
         Become a partner
@@ -64,7 +64,7 @@ export function HomeHero() {
         transition={{ type: "spring", stiffness: 400, damping: 24 }}
       >
         <Link
-          href="/home#partner"
+          href="/#partner"
           className="inline-flex w-full items-center justify-center rounded-xl border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/15 sm:w-auto"
         >
           Become a partner

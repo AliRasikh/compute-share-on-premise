@@ -9,7 +9,7 @@ const linkSpring = { type: "spring" as const, stiffness: 450, damping: 26 };
 function BrandHomeLink({ className }: { className?: string }) {
   return (
     <Link
-      href="/home"
+      href="/"
       className={`inline-flex items-center gap-2 font-bold tracking-tight text-slate-900 ${className ?? "text-sm"}`}
     >
       <img

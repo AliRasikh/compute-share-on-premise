@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
-import { HomePageClient } from "./HomePageClient";
+import { permanentRedirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Home | Corimb",
-  description: "Trade compute, run workloads, and explore partnership on Corimb.",
-};
-
-export default function HomePage() {
-  return <HomePageClient />;
+export default function HomeAliasPage() {
+  permanentRedirect("/");
 }
