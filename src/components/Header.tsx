@@ -37,7 +37,7 @@ export function Header({
   initials = "CO",
   avatarSrc,
   dashboardHref = "/dashboard",
-  newTaskHref = "/dashboard",
+  newTaskHref = "/dashboard/compute",
   onNewTaskClick,
   showProfileButton = true,
   onManageProfileClick,
@@ -73,6 +73,9 @@ export function Header({
           <nav className="flex items-center gap-4 sm:gap-6" aria-label="Workspace">
             <Link href={dashboardHref} className={navTextClass}>
               Dashboard
+            </Link>
+            <Link href="/dashboard/my-nodes" className={navTextClass}>
+              My Nodes
             </Link>
             {onNewTaskClick ? (
               <button
