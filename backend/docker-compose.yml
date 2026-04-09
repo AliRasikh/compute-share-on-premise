@@ -189,6 +189,31 @@ services:
       nomad-server:
         condition: service_healthy
 
+  # ── Headscale Control Plane ────────────────────────────────────────────────
+  headscale:
+    image: headscale/headscale:latest
+    container_name: headscale
+    hostname: headscale
+    network_mode: host
+    volumes:
+      - ./headscale/config:/etc/headscale
+      - ./headscale/data:/var/lib/headscale
+    entrypoint: /bin/sh -c
+    command: 
+      - |
+        headscale serve & 
+        PID=$$!
+        sleep 3
+        # Auto-setup user and key
+        headscale users create cluster-nodes 2>/dev/null || true
+        headscale preauthkeys create -e 14d --ephemeral --user cluster-nodes > /var/lib/headscale/current_auth_key.txt
+        echo "=========================================================="
+        echo " HEADSCALE AUTO-SETUP COMPLETE"
+        echo " Your Worker Node Auth Key is: $$(cat /var/lib/headscale/current_auth_key.txt)"
+        echo "=========================================================="
+        wait $$PID
+    restart: unless-stopped
+
 volumes:
   nomad-server-data:
   nomad-alpha-data:
