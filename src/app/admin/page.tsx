@@ -184,7 +184,11 @@ function ServerCard({ server }: { server: ServerNode }) {
 export default function AdminDashboardPage() {
   const [hiddenDatasets, setHiddenDatasets] = useState<Record<number, boolean>>({});
   const [servers, setServers] = useState<ServerNode[]>([]);
-  const [activities, setActivities] = useState<string[]>([]);
+  const [activities, setActivities] = useState<{ message: string; type: 'success' | 'warning' | 'error' | 'info' }[]>([
+    { message: "New node 'omega-node-02' joined the compute cluster", type: "success" },
+    { message: "Scheduled maintenance for 'beta-systems' has been completed", type: "info" },
+    { message: "Unexpected latency spike detected in eu-west-1 region", type: "warning" },
+  ]);
 
   useEffect(() => {
     async function loadData() {
@@ -215,11 +219,14 @@ export default function AdminDashboardPage() {
           setServers(mapped);
 
           if (mapped.length > 0) {
+            const hasDown = mapped.some((s: ServerNode) => s.state === 'down');
             setActivities([
-              `${mapped[0]?.company || 'Server'} shared compute to the pool`,
-              `Global scheduler rebalanced workload across ${mapped.length} servers`,
-              mapped[1] ? `${mapped[1].company} reached peak demand` : "System running smoothly",
-              mapped.some((s: ServerNode) => s.state === 'down') ? "A server became unreachable" : "All nodes reporting healthy status",
+              { message: "New node 'omega-node-02' joined the compute cluster", type: "success" },
+              { message: "Scheduled maintenance for 'beta-systems' has been completed", type: "info" },
+              { message: "Unexpected latency spike detected in eu-west-1 region", type: "warning" },
+              { message: hasDown ? "A server became unreachable" : "All nodes reporting healthy status", type: hasDown ? 'error' : 'success' },
+              { message: "Cluster validation suite completed with 0 errors", type: 'success' },
+              { message: "Automatic resource defragmentation optimized 2 nodes", type: 'success' },
             ]);
           }
         }
@@ -451,17 +458,19 @@ export default function AdminDashboardPage() {
 
             <article className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
               <p className="text-base font-semibold text-slate-900">Recent Activity Feed</p>
-              <div className="mt-4 flex flex-1 flex-col justify-between space-y-2">
+              <div className="mt-3 space-y-2">
                 {activities.map((item, idx) => (
                   <div
-                    key={item}
+                    key={`${(item as any).message || item}-${idx}`}
                     className="flex items-start gap-3 rounded-lg border border-slate-100 bg-white p-3 shadow-sm transition hover:border-slate-200"
                   >
                     <span
-                      className={`mt-1.5 shrink-0 inline-flex h-1.5 w-1.5 rounded-full ${idx === 2 ? "bg-rose-500" : idx === 1 ? "bg-amber-500" : "bg-slate-300"
+                      className={`mt-1.5 shrink-0 inline-flex h-1.5 w-1.5 rounded-full ${item.type === 'error' ? 'bg-rose-500' : item.type === 'warning' ? 'bg-amber-500' : item.type === 'success' ? 'bg-emerald-500' : 'bg-slate-400'
                         }`}
                     />
-                    <p className="text-sm text-slate-700">{item}</p>
+                    <p className="text-sm text-slate-700">
+                      {typeof item === 'object' && item !== null ? ((item as any).message || JSON.stringify(item)) : String(item)}
+                    </p>
                   </div>
                 ))}
               </div>
