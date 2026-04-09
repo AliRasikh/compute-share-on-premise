@@ -923,10 +923,10 @@ export default function ComputePage() {
                   </div>
                   <textarea
                     value={code}
-                    onChange={(e) => setCode(e.target.value)}
+                    readOnly
                     rows={10}
                     disabled={isRunning}
-                    className="w-full rounded-b-xl border border-t-0 border-slate-200 bg-slate-900 text-emerald-400 font-mono text-sm p-4 outline-none focus:ring-2 focus:ring-blue-500/20 resize-y leading-relaxed disabled:opacity-60"
+                    className="w-full rounded-b-xl border border-t-0 border-slate-200 bg-slate-900 text-emerald-400 font-mono text-sm p-4 outline-none resize-y leading-relaxed disabled:opacity-60 cursor-default"
                     spellCheck={false}
                   />
                   <div className="flex items-center gap-4 mt-3">
