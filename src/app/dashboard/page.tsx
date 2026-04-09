@@ -130,7 +130,7 @@ export default function DashboardPage() {
 
       {/* Global Node Map & Stats */}
       <div className="space-y-6">
-        <GlobalNodeMap />
+        {/* <GlobalNodeMap /> */}
         <DashboardStatsCards />
       </div>
 
