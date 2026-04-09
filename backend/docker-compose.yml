@@ -31,7 +31,6 @@ services:
       - NOMAD_ROLE=server
       - NODE_NAME=sovereign-server
       - DATACENTER=eu-west
-      - ADVERTISE_IP=95.179.248.242
     ports:
       - "4646:4646"    # HTTP API + UI
       - "4647:4647"    # RPC
