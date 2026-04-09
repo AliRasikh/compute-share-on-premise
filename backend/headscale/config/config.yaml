@@ -1,8 +1,10 @@
 server_url: "https://headscale.corimb.garden"
 listen_addr: "0.0.0.0:8085"
 metrics_listen_addr: "127.0.0.1:9090"
-db_type: sqlite3
-db_path: /var/lib/headscale/db.sqlite
+database:
+  type: sqlite
+  sqlite:
+    path: /var/lib/headscale/db.sqlite
 tls_letsencrypt_challenge_type: HTTP-01
 tls_letsencrypt_challenge_listen_addr: ""
 tls_letsencrypt_hostname: ""
